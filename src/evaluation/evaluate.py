@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import roc_curve, accuracy_score, roc_auc_score
 from scipy.stats import ttest_ind
-from scipy.stats._result_classes import TtestResult
+from scipy.stats._stats_py import TtestResult
 from typing import Tuple
 
 

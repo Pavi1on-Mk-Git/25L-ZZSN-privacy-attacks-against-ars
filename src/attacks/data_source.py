@@ -43,9 +43,6 @@ class DataSource:
         """
         raise NotImplementedError
 
-    def _strip_hydra_path(self, path: str) -> str:
-        return os.path.join(*os.path.join(os.getcwd()).split("/")[:-3], path)
-
     @property
     def filename(self) -> str:
         return f"{self.model_cfg.name}_{self.attack_cfg.name}_{self.config.run_id}_{self.dataset_cfg.name}_{self.dataset_cfg.split}"
@@ -58,7 +55,7 @@ class DataSource:
             else self.config.path_to_features
         )
         return os.path.join(
-            self._strip_hydra_path(path),
+            path,
             f"{self.filename}.npz",
         )
 
@@ -66,7 +63,7 @@ class DataSource:
     def path_in(self) -> str:
         assert self.action_cfg.name != "features_extraction"
         return os.path.join(
-            self._strip_hydra_path(self.config.path_to_features),
+            self.config.path_to_features,
             f"{self.filename}.npz",
         )
 
