@@ -1,0 +1,15 @@
+[project]
+name = "25L-ZZSN-privacy-attacks-against-ars"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Paweł Kochański", email = "pawilioxion@gmail.com"},
+]
+dependencies = ["scikit-learn>=1.6.1", "hydra-core>=1.3.2", "torch>=2.6.0", "pandas>=2.2.3", "huggingface-hub>=0.30.2", "torchprofile>=0.0.4", "torchmetrics>=1.7.1", "matplotlib>=3.10.1", "seaborn>=0.13.2"]
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false

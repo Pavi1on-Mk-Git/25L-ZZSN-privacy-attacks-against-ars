@@ -4,7 +4,8 @@ rar/
 out/
 not.ipynb
 *__pycache__/
-model_checkpoints/
+model_checkpoints/var/*
+!model_checkpoints/var/.gitkeep
 analysis/plots/
 outputs/
 logs/
@@ -16,3 +17,4 @@ __pycache__/
 .vscode/
 bash_scripts/
 datasets/
+.pdm-python
