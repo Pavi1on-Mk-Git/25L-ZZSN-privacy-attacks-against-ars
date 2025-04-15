@@ -10,7 +10,7 @@ shared_aln: false
 
 dataloader: var
 image_size: 256
-batch_size: 16
+batch_size: 64
 
 hflip: false
 mid_reso: 1.125

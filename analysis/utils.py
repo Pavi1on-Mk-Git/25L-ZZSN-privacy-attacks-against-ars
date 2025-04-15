@@ -40,7 +40,7 @@ MODELS = [
     "var_16",
     # "var_20",
     # "var_24",
-    # "var_30",
+    "var_30",
     # "mar_b",
     # "mar_l",
     # "mar_h",
