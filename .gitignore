@@ -18,3 +18,4 @@ __pycache__/
 bash_scripts/
 datasets/
 .pdm-python
+sscd_disc_mixup.torchscript.pt

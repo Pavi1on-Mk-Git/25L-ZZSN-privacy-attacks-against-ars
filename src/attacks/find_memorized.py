@@ -66,7 +66,7 @@ class ExtractMemorized(FeatureExtractor):
     @torch.no_grad()
     def load_candidates(self) -> DataLoader:
         data = np.load(
-            f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.name}_{self.attack_cfg.std}.npz",
+            f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
             allow_pickle=True,
         )["data"]
 
@@ -90,8 +90,16 @@ class ExtractMemorized(FeatureExtractor):
             batch = batch[0].to(device)
             target = batch[:, 5, :-2]
             preds = [batch[:, idx, :-2] for idx in range(5)]
-            out_preds = [self.model.tokens_to_img(pred, 0.0).cpu() for pred in preds]
-            out_target = self.model.tokens_to_img(target, self.attack_cfg.std).cpu()
+
+            if self.model_cfg.name[:3] == "mar":
+                pred_args = [(pred, 0.0) for pred in preds]
+                target_args = (target, self.attack_cfg.std)
+            else:
+                pred_args = [(pred,) for pred in preds]
+                target_args = (target,)
+
+            out_preds = [self.model.tokens_to_img(*pred_arg).cpu() for pred_arg in pred_args]
+            out_target = self.model.tokens_to_img(*target_args).cpu()
             features_real = self.get_features(out_target.to(device).clone()).cpu()
             features_generated = [
                 self.get_features(pred.to(device).clone()).cpu() for pred in out_preds

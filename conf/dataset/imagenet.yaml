@@ -1,5 +1,5 @@
 name: imagenet
-dataset_path: ./datasets/imagenet-1k
+dataset_path: /net/pr2/projects/plgrid/plggzzsn2025/attack_datasets/imagenet-1k
 num_classes: 1000
 train_name: train
 test_name: val
