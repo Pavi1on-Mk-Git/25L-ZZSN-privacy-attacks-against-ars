@@ -2,12 +2,14 @@ from typing import Dict
 
 from src.models.GeneralVARWrapper import GeneralVARWrapper
 from src.models.VAR import VARWrapper
+from src.models.audiocraft import AudiocraftModelWrapper
 
 # from src.models.MAR import MARWrapper
 # from src.models.RAR import RARWrapper
 
 
 gen_models: Dict[str, GeneralVARWrapper] = {
+    "musicgen_small": AudiocraftModelWrapper,
     "var_16": VARWrapper,
     # "var_20": VARWrapper,
     # "var_24": VARWrapper,
