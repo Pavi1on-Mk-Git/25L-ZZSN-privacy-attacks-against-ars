@@ -13,7 +13,7 @@ def is_valid_file(gpus_idx, path: str) -> bool:
 
 
 class ImageFolderDataset:
-    def __init__(self, dataset_cfg, transform: Compose) -> ImageFolder:
+    def __init__(self, dataset_cfg, transform: Compose):
         self.dataset = ImageFolder(
             os.path.join(dataset_cfg.dataset_path, dataset_cfg.split),
             transform=transform,

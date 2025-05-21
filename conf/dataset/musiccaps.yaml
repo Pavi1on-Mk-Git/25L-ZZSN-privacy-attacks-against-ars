@@ -1,6 +1,3 @@
 name: musiccaps
-dataset_path: /home/jproboszcz/zzsn/data/musiccaps
-num_classes: 1
-test_name: val
-gpus_cnt: 1
-idx: 0
+audio_dir: /home/jproboszcz/zzsn/data/musiccaps/val
+labels_csv: /home/jproboszcz/zzsn/data/musiccaps/val/musiccaps-public.csv
