@@ -25,12 +25,7 @@ class LLMMIAExtractor(FeatureExtractor):
 
     def get_zlib_ratios(self, token_logprobas: T, tokens: T) -> T:
         zlib_entropies = (
-            torch.tensor(
-                [
-                    len(zlib.compress(bytes(str(t.cpu().tolist()), "utf=8")))
-                    for t in tokens
-                ]
-            )
+            torch.tensor([len(zlib.compress(bytes(str(t.cpu().tolist()), "utf=8"))) for t in tokens])
             .unsqueeze(1)
             .to(self.device)
         )
@@ -41,9 +36,7 @@ class LLMMIAExtractor(FeatureExtractor):
     def get_min_k_logprobas(self, token_logprobas: T, k: int) -> T:
 
         # negative because we want members to have lower values
-        return (
-            torch.topk(-token_logprobas, k, dim=1).values.mean(dim=1).unsqueeze(1)
-        )  # B, 1
+        return torch.topk(-token_logprobas, k, dim=1).values.mean(dim=1).unsqueeze(1)  # B, 1
 
     def get_mu(self, logits: T) -> T:
         probas, logprobas = self.get_all_probas_logprobas(logits)
@@ -57,32 +50,22 @@ class LLMMIAExtractor(FeatureExtractor):
     def get_min_k_plus(self, token_logprobas: T, mu: T, sigma: T) -> T:
         return (token_logprobas - mu) / (sigma + 1e-6)  # B, N_tokens
 
-    def get_min_k_plus_logprobas(
-        self, token_logprobas: T, mu: T, sigma: T, k: int
-    ) -> T:
+    def get_min_k_plus_logprobas(self, token_logprobas: T, mu: T, sigma: T, k: int) -> T:
         minkplus = self.get_min_k_plus(token_logprobas, mu, sigma)
 
         # negative because we want members to have lower values
         return torch.topk(-minkplus, k, dim=1).values.mean(dim=1).unsqueeze(1)  # B, 1
 
-    def get_surp_k_counter_entropy_logprobas(
-        self, mu: T, token_logprobas: T, k: int, max_entropy: float
-    ) -> T:
-        bound_k = (
-            torch.topk(-token_logprobas, k, dim=1).values.max(dim=1).values.unsqueeze(1)
-        )
+    def get_surp_k_counter_entropy_logprobas(self, mu: T, token_logprobas: T, k: int, max_entropy: float) -> T:
+        bound_k = torch.topk(-token_logprobas, k, dim=1).values.max(dim=1).values.unsqueeze(1)
         mask = (-mu < max_entropy) & (token_logprobas < bound_k)
         surp_counter_k = mask.float().mean(dim=1)
 
         # negative because we want members to have lower values
         return -surp_counter_k.unsqueeze(1)  # B, 1
 
-    def get_surp_k_entropy_logprobas(
-        self, mu: T, token_logprobas: T, k: int, max_entropy: float
-    ) -> T:
-        bound_k = (
-            torch.topk(-token_logprobas, k, dim=1).values.max(dim=1).values.unsqueeze(1)
-        )
+    def get_surp_k_entropy_logprobas(self, mu: T, token_logprobas: T, k: int, max_entropy: float) -> T:
+        bound_k = torch.topk(-token_logprobas, k, dim=1).values.max(dim=1).values.unsqueeze(1)
         mask = (-mu < max_entropy) & (token_logprobas < bound_k)
         surp_k = (token_logprobas * mask).sum(dim=1) / mask.sum(dim=1).clip(1e-6, None)
 
@@ -92,25 +75,13 @@ class LLMMIAExtractor(FeatureExtractor):
     def get_below_mean_logproba(self, token_logprobas: T) -> T:
 
         # positive because we want members to have lower values
-        return (
-            (token_logprobas < token_logprobas.mean(dim=1).unsqueeze(1))
-            .float()
-            .mean(dim=1)
-            .unsqueeze(1)
-        )  # B, 1
+        return (token_logprobas < token_logprobas.mean(dim=1).unsqueeze(1)).float().mean(dim=1).unsqueeze(1)  # B, 1
 
-    def get_below_mean_min_k_plus_logproba(
-        self, token_logprobas: T, mu: T, sigma: T
-    ) -> T:
+    def get_below_mean_min_k_plus_logproba(self, token_logprobas: T, mu: T, sigma: T) -> T:
         minkplus = self.get_min_k_plus(token_logprobas, mu, sigma)
 
         # positive because we want members to have lower values
-        return (
-            (minkplus < minkplus.mean(dim=1).unsqueeze(1))
-            .float()
-            .mean(dim=1)
-            .unsqueeze(1)
-        )  # B, 1
+        return (minkplus < minkplus.mean(dim=1).unsqueeze(1)).float().mean(dim=1).unsqueeze(1)  # B, 1
 
     def get_below_prev_mean_logproba(self, token_logprobas: T) -> T:
 
@@ -119,9 +90,7 @@ class LLMMIAExtractor(FeatureExtractor):
             -(
                 token_logprobas
                 < token_logprobas.cumsum(dim=1)
-                / torch.arange(
-                    1, token_logprobas.shape[1] + 1, device=self.device
-                ).unsqueeze(0)
+                / torch.arange(1, token_logprobas.shape[1] + 1, device=self.device).unsqueeze(0)
             )
             .float()
             .mean(dim=1)
@@ -135,10 +104,7 @@ class LLMMIAExtractor(FeatureExtractor):
         return (
             -(
                 minkplus
-                < minkplus.cumsum(dim=1)
-                / torch.arange(1, minkplus.shape[1] + 1, device=self.device).unsqueeze(
-                    0
-                )
+                < minkplus.cumsum(dim=1) / torch.arange(1, minkplus.shape[1] + 1, device=self.device).unsqueeze(0)
             )
             .float()
             .mean(dim=1)
@@ -146,13 +112,8 @@ class LLMMIAExtractor(FeatureExtractor):
         )  # B, 1
 
     def get_slope(self, token_logprobas: T) -> T:
-        x = torch.arange(
-            token_logprobas.shape[1], dtype=torch.float, device=self.device
-        )
-        slope_num = (
-            (x - x.mean())
-            * (token_logprobas - token_logprobas.mean(dim=1).unsqueeze(1))
-        ).sum(dim=1)
+        x = torch.arange(token_logprobas.shape[1], dtype=torch.float, device=self.device)
+        slope_num = ((x - x.mean()) * (token_logprobas - token_logprobas.mean(dim=1).unsqueeze(1))).sum(dim=1)
         slope_den = (x - x.mean()).pow(2).sum()
 
         # positive because we want members to have lower values
@@ -193,36 +154,22 @@ class LLMMIAExtractor(FeatureExtractor):
             for k in self.attack_cfg.ks:
                 k = int(k * tokens.shape[1])
                 for max_entropy in self.attack_cfg.max_entropies:
-                    features.append(
-                        self.get_surp_k_entropy_logprobas(
-                            mu, token_logprobas, k, max_entropy
-                        )
-                    )
+                    features.append(self.get_surp_k_entropy_logprobas(mu, token_logprobas, k, max_entropy))
             for k in self.attack_cfg.ks:
                 k = int(k * tokens.shape[1])
                 for max_entropy in self.attack_cfg.max_entropies:
-                    features.append(
-                        self.get_surp_k_counter_entropy_logprobas(
-                            mu, token_logprobas, k, max_entropy
-                        )
-                    )
+                    features.append(self.get_surp_k_counter_entropy_logprobas(mu, token_logprobas, k, max_entropy))
             # print("surp", features.shape)
         if "min_k%++" in self.attack_cfg.metric_list:
             for k in self.attack_cfg.ks:
                 k = int(k * tokens.shape[1])
-                features.append(
-                    self.get_min_k_plus_logprobas(token_logprobas, mu, sigma, k)
-                )
+                features.append(self.get_min_k_plus_logprobas(token_logprobas, mu, sigma, k))
             # print("min_k%++", features.shape)
         if "camia" in self.attack_cfg.metric_list:
             features.append(self.get_below_mean_logproba(token_logprobas))
-            features.append(
-                self.get_below_mean_min_k_plus_logproba(token_logprobas, mu, sigma)
-            )
+            features.append(self.get_below_mean_min_k_plus_logproba(token_logprobas, mu, sigma))
             features.append(self.get_below_prev_mean_logproba(token_logprobas))
-            features.append(
-                self.get_below_prev_mean_min_k_plus(token_logprobas, mu, sigma)
-            )
+            features.append(self.get_below_prev_mean_min_k_plus(token_logprobas, mu, sigma))
             features.append(self.get_slope(token_logprobas))
             # print("camia", features.shape)
         features = torch.stack(features, dim=2).cpu()
