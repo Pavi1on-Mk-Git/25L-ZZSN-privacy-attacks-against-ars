@@ -2,6 +2,7 @@ from src.models.GeneralVARWrapper import GeneralVARWrapper
 import torch
 from torch import Tensor as T
 from audiocraft.models import MusicGen
+from audiocraft.modules.conditioners import ConditioningAttributes
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -23,11 +24,20 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         tokens, _ = self.tokenizer.encode(images)
         return tokens
 
-    def forward(self, images: T, conditioning: T) -> T:
+    def forward(self, audio: T, conditioning: list[str], is_cfg: bool) -> T:
         """
         Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
         """
-        raise NotImplementedError
+        attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
+        tokens = self.tokenize(audio)
+        out = self.generator.forward(tokens, attributes)
+        if is_cfg:
+            out_cfg = self.generator.forward(
+                audio, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
+            )
+            out = out_cfg - out
+        print(f"{out.shape=}")
+        return out
 
     @torch.no_grad()
     def get_token_list(self, images: T, *args, **kwargs) -> list[T]:
