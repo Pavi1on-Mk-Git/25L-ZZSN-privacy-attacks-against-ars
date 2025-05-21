@@ -1,5 +1,4 @@
 import sys
-import os
 
 sys.path.append("./audiocraft")
 
@@ -15,5 +14,4 @@ wav = model.generate(descriptions)  # generates 2 samples.
 
 for idx, one_wav in enumerate(wav):
     # Will save under {idx}.wav, with loudness normalization at -14 db LUFS.
-    audio_write(f'{idx}', one_wav.cpu(), model.sample_rate, strategy="loudness")
-
+    audio_write(f"{idx}", one_wav.cpu(), model.sample_rate, strategy="loudness")
