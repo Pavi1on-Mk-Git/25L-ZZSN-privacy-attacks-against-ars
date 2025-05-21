@@ -1,7 +1,9 @@
 VAR/
 mar/
 rar/
+1d-tokenizer/
 audiocraft/
+data/
 out/
 not.ipynb
 *__pycache__/
@@ -19,4 +21,5 @@ __pycache__/
 bash_scripts/
 datasets/
 .pdm-python
+.python-version
 sscd_disc_mixup.torchscript.pt

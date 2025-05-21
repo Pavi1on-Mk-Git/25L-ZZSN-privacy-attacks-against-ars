@@ -44,7 +44,6 @@ def main(cfg: DictConfig) -> None:
             cfg.action = {"name": "features_extraction", "device": config.device}
     action_cfg = cfg.action
 
-
     action_input = [config, model_cfg, action_cfg, attack_cfg, dataset_cfg]
 
     torch.manual_seed(config.seed)
@@ -69,9 +68,7 @@ def features_extraction(
     dataset_cfg: DictConfig,
 ) -> None:
     model = gen_models[model_cfg.name](config, model_cfg, dataset_cfg)
-    extractor = feature_extractors[attack_cfg.name](
-        config, model_cfg, action_cfg, attack_cfg, dataset_cfg, model
-    )
+    extractor = feature_extractors[attack_cfg.name](config, model_cfg, action_cfg, attack_cfg, dataset_cfg, model)
     extractor.run()
 
 
