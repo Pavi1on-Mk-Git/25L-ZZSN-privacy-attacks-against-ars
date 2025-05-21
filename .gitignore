@@ -1,6 +1,7 @@
 VAR/
 mar/
 rar/
+audiocraft/
 out/
 not.ipynb
 *__pycache__/
