@@ -17,8 +17,6 @@ class ImageFolderDataset:
         self.dataset = ImageFolder(
             os.path.join(dataset_cfg.dataset_path, dataset_cfg.split),
             transform=transform,
-            is_valid_file=partial(
-                is_valid_file, (dataset_cfg.gpus_cnt, dataset_cfg.idx)
-            ),
+            is_valid_file=partial(is_valid_file, (dataset_cfg.gpus_cnt, dataset_cfg.idx)),
         )
         self.collate_fn = None
