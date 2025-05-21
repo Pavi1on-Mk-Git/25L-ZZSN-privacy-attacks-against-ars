@@ -2,6 +2,7 @@ import os
 import os.path
 from torch.utils.data import Dataset
 import torch
+from torch.types import Tensor as T
 import pandas as pd
 from audiocraft.data.audio import audio_read
 
@@ -27,11 +28,19 @@ class AudioDataset(Dataset):
         caption_idx = int(filename[:-4].split("/")[-1])
         caption = self.descriptions[caption_idx]
 
-        return audio_read(filename)[0], caption
+        return self._read_audio_as_mono(filename), caption
+
+    def _read_audio_as_mono(self, filename: str) -> T:
+        audio = audio_read(filename)[0]
+
+        if audio.shape[0] == 2:
+            channel_1, channel_2 = audio[0], audio[1]
+            audio = torch.unsqueeze((channel_1 + channel_2) / 2, 0)
+
+        return audio
 
 
 def collate_fn(batch):
-    # @TODO: can't torch.stack as the audios have different sizes
-    #        verify if attacks will work with list or padded tensors
-    #        using batch size of 1 only for now
+    # can't torch.stack as the audios have different sizes, using batch size of 1 only for now
+    # @TODO: add proper batching, with returning padding mask to be used by tokenizer
     return (torch.stack([x[0] for x in batch]), [x[1] for x in batch])

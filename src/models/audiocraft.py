@@ -20,7 +20,8 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         Tokenizes the images, return tensor of shape (batch_size, seq_len)
         """
-        raise NotImplementedError
+        tokens, _ = self.tokenizer.encode(images)
+        return tokens
 
     def forward(self, images: T, conditioning: T) -> T:
         """
