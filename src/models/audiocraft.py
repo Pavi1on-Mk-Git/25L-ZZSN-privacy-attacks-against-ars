@@ -1,6 +1,7 @@
 from src.models.GeneralVARWrapper import GeneralVARWrapper
 import torch
 from torch import Tensor as T
+from audiocraft.models import MusicGen
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -8,7 +9,12 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         Loads the generator and tokenizer models
         """
-        raise NotImplementedError
+        match self.model_cfg.name:
+            case "musicgen_small":
+                model = MusicGen.get_pretrained("small")
+                return model.lm, model.compression_model
+            case _:
+                raise Exception(f"unknown model name: {self.model_cfg.name}")
 
     def tokenize(self, images: T) -> T:
         """

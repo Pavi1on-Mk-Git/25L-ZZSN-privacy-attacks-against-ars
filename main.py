@@ -4,7 +4,7 @@ import os
 sys.path.append("./VAR")
 sys.path.append("./mar")
 sys.path.append("./rar")
-
+sys.path.append("./audiocraft")
 
 import hydra
 import torch
