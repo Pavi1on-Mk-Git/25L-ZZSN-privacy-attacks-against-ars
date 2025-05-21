@@ -38,12 +38,8 @@ class VARWrapper(GeneralVARWrapper):
         if not os.path.exists(f"model_checkpoints/var/{var_ckpt}"):
             os.system(f"wget {hf_home}/{var_ckpt} -O model_checkpoints/var/{var_ckpt}")
 
-        vae.load_state_dict(
-            torch.load(f"model_checkpoints/var/{vae_ckpt}", map_location="cpu")
-        )
-        var.load_state_dict(
-            torch.load(f"model_checkpoints/var/{var_ckpt}", map_location="cpu")
-        )
+        vae.load_state_dict(torch.load(f"model_checkpoints/var/{vae_ckpt}", map_location="cpu"))
+        var.load_state_dict(torch.load(f"model_checkpoints/var/{var_ckpt}", map_location="cpu"))
 
         vae.eval()
         var.eval()
@@ -56,9 +52,7 @@ class VARWrapper(GeneralVARWrapper):
     @torch.no_grad()
     def get_token_list(self, images: T, *args, **kwargs) -> List[T]:
         self.tokenizer: VQVAE
-        return self.tokenizer.img_to_idxBl(
-            images, v_patch_nums=self.model_cfg.patch_nums
-        )  # List[B, N_tokens]
+        return self.tokenizer.img_to_idxBl(images, v_patch_nums=self.model_cfg.patch_nums)  # List[B, N_tokens]
 
     @torch.no_grad()
     def tokenize(self, images: T) -> T:
@@ -71,17 +65,13 @@ class VARWrapper(GeneralVARWrapper):
         var_input = self.tokenizer.quantize.idxBl_to_var_input(token_l)
         out = self.generator(conditioning, var_input)
         if is_cfg:
-            conditioning = torch.full_like(
-                conditioning, fill_value=self.dataset_cfg.num_classes
-            )
+            conditioning = torch.full_like(conditioning, fill_value=self.dataset_cfg.num_classes)
             out_cfg = self.generator(conditioning, var_input)
             out = out_cfg - out
         return out  # B, N_tokens, V
 
     @torch.no_grad()
-    def sequential_predict(
-        self, images: T, conditioning: T, num_samplings: int, *args, **kwargs
-    ) -> List[T]:
+    def sequential_predict(self, images: T, conditioning: T, num_samplings: int, *args, **kwargs) -> List[T]:
         gen = torch.Generator(device=self.model_cfg.device)
         gen.manual_seed(self.model_cfg.seed)
 
@@ -123,9 +113,7 @@ class VARWrapper(GeneralVARWrapper):
         B, C, H, W = f.shape
         for si, p in enumerate(self.model_cfg.patch_nums):
             z_NC = (
-                F.interpolate(f, size=(p, p), mode="area")
-                .permute(0, 2, 3, 1)
-                .reshape(-1, C)
+                F.interpolate(f, size=(p, p), mode="area").permute(0, 2, 3, 1).reshape(-1, C)
                 if (si != SN - 1)
                 else f.permute(0, 2, 3, 1).reshape(-1, C)
             )
@@ -147,9 +135,7 @@ class VARWrapper(GeneralVARWrapper):
                     mode="bicubic",
                 ).contiguous()
                 if (si != SN - 1)
-                else self.tokenizer.quantize.embedding(idx_Bhw)
-                .permute(0, 3, 1, 2)
-                .contiguous()
+                else self.tokenizer.quantize.embedding(idx_Bhw).permute(0, 3, 1, 2).contiguous()
             )
             h_BChw = self.tokenizer.quantize.quant_resi[si / (SN - 1)](h_BChw)
             f.sub_(h_BChw)
@@ -172,26 +158,20 @@ class VARWrapper(GeneralVARWrapper):
     @torch.no_grad()
     def tokens_to_img(self, tokens: T) -> T:
         return (
-            self.tokenizer.idxBl_to_img(
-                self.tokens_to_token_list(tokens), same_shape=False, last_one=True
-            )
+            self.tokenizer.idxBl_to_img(self.tokens_to_token_list(tokens), same_shape=False, last_one=True)
             .add_(1)
             .mul_(0.5)
         )
 
     @torch.no_grad()
-    def generate_single_memorization(
-        self, top: int, target_token_list: List[T], label: T, std: float
-    ) -> T:
+    def generate_single_memorization(self, top: int, target_token_list: List[T], label: T, std: float) -> T:
         B = label.shape[0]
         total_tokens_used = 0
         for b in self.generator.blocks:
             b.attn.kv_caching(True)
 
         sos = cond_BD = self.generator.class_emb(label)
-        lvl_pos = (
-            self.generator.lvl_embed(self.generator.lvl_1L) + self.generator.pos_1LC
-        )
+        lvl_pos = self.generator.lvl_embed(self.generator.lvl_1L) + self.generator.pos_1LC
         zero_token_map: T = (
             sos.unsqueeze(1).expand(B, self.generator.first_l, -1)
             + self.generator.pos_start.expand(B, self.generator.first_l, -1)
@@ -229,15 +209,11 @@ class VARWrapper(GeneralVARWrapper):
 
             h_BChw = self.generator.vae_quant_proxy[0].embedding(idx_Bl)
             h_BChw = h_BChw.transpose_(1, 2).reshape(B, self.generator.Cvae, pn, pn)
-            f_hat, next_token_map = self.generator.vae_quant_proxy[
-                0
-            ].get_next_autoregressive_input(
+            f_hat, next_token_map = self.generator.vae_quant_proxy[0].get_next_autoregressive_input(
                 si, len(self.generator.patch_nums), f_hat, h_BChw
             )
             if si != self.generator.num_stages_minus_1:  # prepare for next stage
-                next_token_map = next_token_map.view(
-                    B, self.generator.Cvae, -1
-                ).transpose(1, 2)
+                next_token_map = next_token_map.view(B, self.generator.Cvae, -1).transpose(1, 2)
                 next_token_map = (
                     self.generator.word_embed(next_token_map)
                     + lvl_pos[:, cur_L : cur_L + self.generator.patch_nums[si + 1] ** 2]
@@ -262,17 +238,9 @@ class VARWrapper(GeneralVARWrapper):
         scores_cls[~mask] = -torch.inf
         mem_samples_indices = torch.topk(scores_cls[:, -1], 10).indices
         mem_sample_idx = mem_samples_indices[k]
-        label_B = (
-            members_features[mem_sample_idx, [0]][0, [-1]]
-            .to(self.model_cfg.device)
-            .long()
-        )
+        label_B = members_features[mem_sample_idx, [0]][0, [-1]].to(self.model_cfg.device).long()
 
-        target_tokens = (
-            members_features[mem_sample_idx, [0]][[0], :680]
-            .to(self.model_cfg.device)
-            .long()
-        )
+        target_tokens = members_features[mem_sample_idx, [0]][[0], :680].to(self.model_cfg.device).long()
 
         return (
             target_tokens,
@@ -286,9 +254,7 @@ class VARWrapper(GeneralVARWrapper):
         return loss_fn(preds.permute(0, 2, 1), ground_truth)  # B, N_tokens
 
     @torch.no_grad()
-    def get_loss_per_token(
-        self, images: T, classes: T, is_cfg: bool, ltype: str = "celoss"
-    ) -> T:
+    def get_loss_per_token(self, images: T, classes: T, is_cfg: bool, ltype: str = "celoss") -> T:
         """
         Computes the loss per token, returns tensor of shape (batch_size, seq_len)
         """
@@ -309,15 +275,11 @@ class VARWrapper(GeneralVARWrapper):
             idx = 0
             for p in self.model_cfg.patch_nums:
                 latents_pred.append(
-                    self.tokens_to_latent(tokens_pred[..., idx : idx + p**2]).reshape(
-                        B, -1, self.model_cfg.Cvae
-                    )
+                    self.tokens_to_latent(tokens_pred[..., idx : idx + p**2]).reshape(B, -1, self.model_cfg.Cvae)
                 )
                 idx += p**2
             latents_pred = torch.concat(latents_pred, dim=1)
-            return torch.norm(latents - latents_pred, dim=2, p=2).view(
-                B, -1
-            )  # B, N_tokens
+            return torch.norm(latents - latents_pred, dim=2, p=2).view(B, -1)  # B, N_tokens
 
         return celoss() if ltype == "celoss" else latent()
 
@@ -340,7 +302,7 @@ class VARWrapper(GeneralVARWrapper):
         times = []
         for _ in range(int(10 / (B / 64))):
             start = time()
-            sampled_images = self.generator.autoregressive_infer_cfg(
+            _ = self.generator.autoregressive_infer_cfg(
                 B=B,
                 label_B=torch.randint(0, 1000, (B,), device=self.model_cfg.device),
             )
@@ -376,15 +338,11 @@ class VARWrapper(GeneralVARWrapper):
                 h = resi + self.blocks[-1].drop_path(h)
             else:  # fused_add_norm is not used
                 h = x
-            logits = generator.head(
-                generator.head_nm(h.float(), cond_BD).float()
-            ).float()
+            logits = generator.head(generator.head_nm(h.float(), cond_BD).float()).float()
             return apply_defense(logits, std, clamp_min, clamp_max)
 
         B = self.model_cfg.batch_size
-        classes = torch.arange(1000, device=self.model_cfg.device).repeat_interleave(
-            n_samples_per_class
-        )
+        classes = torch.arange(1000, device=self.model_cfg.device).repeat_interleave(n_samples_per_class)
 
         self.generator.get_logits = partial(get_logits, self.generator)
 

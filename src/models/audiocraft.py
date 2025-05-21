@@ -11,7 +11,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         match self.model_cfg.name:
             case "musicgen_small":
-                model = MusicGen.get_pretrained("small")
+                model = MusicGen.get_pretrained("facebook/musicgen-small")
                 return model.lm, model.compression_model
             case _:
                 raise Exception(f"unknown model name: {self.model_cfg.name}")

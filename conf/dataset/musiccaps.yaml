@@ -1,7 +1,6 @@
 name: musiccaps
-dataset_path: /placeholder
-num_classes: 1000
-train_name: train
+dataset_path: /home/jproboszcz/zzsn/data/musiccaps
+num_classes: 1
 test_name: val
 gpus_cnt: 1
 idx: 0
