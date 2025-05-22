@@ -12,16 +12,17 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         match self.model_cfg.name:
             case "musicgen_small":
-                model = MusicGen.get_pretrained("facebook/musicgen-small")
+                model = MusicGen.get_pretrained("small")
+                self.autocast = model.autocast
                 return model.lm, model.compression_model
             case _:
                 raise Exception(f"unknown model name: {self.model_cfg.name}")
 
-    def tokenize(self, images: T) -> T:
+    def tokenize(self, audios: T) -> T:
         """
         Tokenizes the images, return tensor of shape (batch_size, seq_len)
         """
-        tokens, _ = self.tokenizer.encode(images)
+        tokens, _ = self.tokenizer.encode(audios)
         return tokens
 
     def forward(self, audio: T, conditioning: list[str], is_cfg: bool) -> T:
@@ -30,13 +31,13 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
         tokens = self.tokenize(audio)
-        out = self.generator.forward(tokens, attributes)
-        if is_cfg:
-            out_cfg = self.generator.forward(
-                audio, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
-            )
-            out = out_cfg - out
-        print(f"{out.shape=}")
+        with self.autocast:
+            out = self.generator.forward(tokens, attributes)
+            if is_cfg:
+                out_cfg = self.generator.forward(
+                    audio, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
+                )
+                out = out_cfg - out
         return out
 
     @torch.no_grad()
