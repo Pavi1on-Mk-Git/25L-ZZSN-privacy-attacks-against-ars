@@ -1,0 +1,3 @@
+[submodule "figaro"]
+	path = figaro
+	url = git@github.com:Pavi1on-Mk-Git/figaro.git
