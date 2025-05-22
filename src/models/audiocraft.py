@@ -26,21 +26,26 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         Tokenizes the images, return tensor of shape (batch_size, seq_len)
         """
         tokens, _ = self.tokenizer.encode(audios)
-        return tokens
 
-    def forward(self, audio: T, conditioning: list[str], is_cfg: bool) -> T:
+        B, K, S = tokens.shape
+        return tokens.reshape(B, K * S)
+
+    def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> T:
         """
         Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
         """
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
-        tokens = self.tokenize(audio)
+        tokens, _ = self.tokenizer.encode(audios)
         with self.autocast:
             out = self.generator.forward(tokens, attributes)
             if is_cfg:
                 out_cfg = self.generator.forward(
-                    audio, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
+                    audios, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
                 )
                 out = out_cfg - out
+
+        B, K, S, card = out.shape
+        out = out.reshape(B, K * S, card)
         return out
 
     @torch.no_grad()
@@ -92,7 +97,13 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
     @torch.no_grad()
     def get_loss_for_tokens(self, preds: T, ground_truth: T) -> T:
-        raise NotImplementedError
+        B, n_tokens, _ = preds.shape
+        assert ground_truth.shape == (B, n_tokens)
+
+        preds = preds.permute(0, 2, 1)
+
+        loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
+        return loss_fn(preds, ground_truth)  # B, K*S
 
     @torch.no_grad()
     def get_flops_forward_train(self) -> int:
