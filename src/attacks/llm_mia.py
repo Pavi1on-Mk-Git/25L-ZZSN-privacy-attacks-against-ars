@@ -175,10 +175,10 @@ class LLMMIAExtractor(FeatureExtractor):
         features = torch.stack(features, dim=2).cpu()
         return features  # B, 1, N_features
 
-    def process_batch(self, batch: Tuple[T, T]) -> T:
+    def process_batch(self, batch: Tuple[T, T | list[str]]) -> T:
         images, classes = batch
         images = images.to(self.device)
-        if type(classes) == T:
+        if type(classes) is T:
             classes = classes.to(self.device).long()
 
         tokens = self.model.tokenize(images)
@@ -186,11 +186,15 @@ class LLMMIAExtractor(FeatureExtractor):
         if self.attack_cfg.is_cfg:
             logits_uncond = self.model.forward(
                 images,
-                torch.full_like(
-                    classes,
-                    fill_value=self.dataset_cfg.num_classes,
-                    device=self.model_cfg.device,
-                    dtype=torch.long,
+                (
+                    torch.full_like(
+                        classes,
+                        fill_value=self.dataset_cfg.num_classes,
+                        device=self.model_cfg.device,
+                        dtype=torch.long,
+                    )
+                    if type(classes) is T
+                    else [None] * len(classes)
                 ),
                 is_cfg=False,
             )

@@ -18,6 +18,9 @@ class GeneralVARWrapper(nn.Module):
         total_params = sum(p.numel() for p in self.generator.parameters())
         print("TOTAL PARAMS:", total_params)
 
+    def is_audio_model(self) -> bool:
+        return False
+
     def load_models(self):
         """
         Loads the generator and tokenizer models

@@ -6,6 +6,9 @@ from audiocraft.modules.conditioners import ConditioningAttributes
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
+    def is_audio_model(self) -> bool:
+        return True
+
     def load_models(self):
         """
         Loads the generator and tokenizer models
