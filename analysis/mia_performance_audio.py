@@ -12,7 +12,7 @@ from analysis.evaluate import get_tpr_fpr, get_auc, get_accuracy
 from analysis.utils import (
     set_plt,
     MODELS_NAME_MAPPING,
-    MODELS_ORDER,
+    AUDIO_MODELS_ORDER,
     AUDIO_MODELS,
     RUN_ID,
     MODEL_MIA_INDICES_MAPPING,
@@ -52,9 +52,7 @@ def get_features() -> Tuple[List[np.ndarray], List[np.ndarray]]:
             all_members.append(members)
             all_nonmembers.append(nonmembers)
         except FileNotFoundError:
-            print(
-                f"Missing {model}, {PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet"
-            )
+            print(f"Missing data for {model}: {(train_dataset, train_split), (test_dataset, test_split)}")
             all_members.append(None)
             all_nonmembers.append(None)
             continue
@@ -65,6 +63,9 @@ def get_row(members: np.ndarray, nonmembers: np.ndarray, model: str) -> List:
     out = []
     NREPS = 250
     np.random.seed(42)
+
+    print(f"{members.shape=}")
+    print(f"{nonmembers.shape=}")
 
     members_lower = True
     for ft_idx, _ in tqdm(
@@ -78,6 +79,9 @@ def get_row(members: np.ndarray, nonmembers: np.ndarray, model: str) -> List:
 
         members_feature[np.isnan(members_feature)] = 0
         nonmembers_feature[np.isnan(nonmembers_feature)] = 0
+
+        members_feature[np.isinf(members_feature)] = 0
+        nonmembers_feature[np.isinf(nonmembers_feature)] = 0
 
         tpr = get_tpr_fpr(
             members_feature,
@@ -182,7 +186,7 @@ def get_main_paper_table(data: pd.DataFrame) -> pd.DataFrame:
 
     df = pd.concat(dfs)
     df.to_csv(f"{PATH_TO_PLOTS}/mia_performance_agg.csv", index=False)
-    tpr_df = df.pivot(index="MIA", columns="Model", values="TPR@FPR=1\\%").loc[MIAS_ORDER][MODELS_ORDER]
+    tpr_df = df.pivot(index="MIA", columns="Model", values="TPR@FPR=1\\%").loc[MIAS_ORDER][AUDIO_MODELS_ORDER]
     tpr_df = tpr_df.fillna("---")
     tpr_df.index.name = None
     tpr_df.columns.name = None
@@ -192,7 +196,7 @@ def get_main_paper_table(data: pd.DataFrame) -> pd.DataFrame:
         column_format="c" * (len(AUDIO_MODELS) + 1),
     )
 
-    auc_df = df.pivot(index="MIA", columns="Model", values="AUC").loc[MIAS_ORDER][MODELS_ORDER]
+    auc_df = df.pivot(index="MIA", columns="Model", values="AUC").loc[MIAS_ORDER][AUDIO_MODELS_ORDER]
     auc_df = auc_df.fillna("---")
     auc_df.index.name = None
     auc_df.columns.name = None

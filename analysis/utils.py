@@ -37,7 +37,7 @@ ATTACKS_COLORS = {
 }
 
 AUDIO_MODELS = [
-    "musicgen_small",
+    # "musicgen_small",
     "audiogen_medium",
 ]
 
@@ -128,6 +128,8 @@ DM_MIA_INDICES = {
 }
 
 MODELS_NAME_MAPPING = {
+    "musicgen_small": "MusicGen (small)",
+    "audiogen_medium": "AudioGen",
     "var_16": "VAR-$\\mathit{d}$16",
     "var_20": "VAR-$\\mathit{d}$20",
     "var_24": "VAR-$\\mathit{d}$24",
@@ -150,6 +152,8 @@ MODELS_NAME_MAPPING = {
 }
 
 MODEL_MIA_INDICES_MAPPING = {
+    "musicgen_small": LLM_MIAS_INDICES,
+    "audiogen_medium": LLM_MIAS_INDICES,
     "var_16": LLM_MIAS_INDICES,
     "var_20": LLM_MIAS_INDICES,
     "var_24": LLM_MIAS_INDICES,
@@ -241,6 +245,7 @@ MODELS_COLORS = {
 }
 
 MODELS_ORDER = [MODELS_NAME_MAPPING[model] for model in MODELS]
+AUDIO_MODELS_ORDER = [MODELS_NAME_MAPPING[model] for model in AUDIO_MODELS]
 
 RUN_ID = "10k"
 RESAMPLING_CNT = 1000
