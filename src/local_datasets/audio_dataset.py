@@ -45,11 +45,13 @@ class AudioDataset(Dataset):
         return self._read_audio_as_mono(filename), caption
 
     def _read_audio_as_mono(self, filename: str) -> T:
-        audio = audio_read(filename)[0]
+        try:
+            audio = audio_read(filename)[0]
+        except Exception:
+            print(f"Error reading audio file {filename}")
+            raise
 
         if audio.shape[0] > 1:
-            if audio.shape[0] > 2:
-                print(f"jakiś dziwny: {filename}")
             channels = audio.shape[0]
             audio = torch.unsqueeze(torch.sum(audio, dim=0) / channels, 0)
 
