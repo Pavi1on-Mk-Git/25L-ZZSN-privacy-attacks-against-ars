@@ -10,9 +10,10 @@ from src.models.audiocraft import AudiocraftModelWrapper
 
 gen_models: Dict[str, GeneralVARWrapper] = {
     "musicgen_small": AudiocraftModelWrapper,
+    "audiogen_medium": AudiocraftModelWrapper,
     "var_16": VARWrapper,
-    # "var_20": VARWrapper,
-    # "var_24": VARWrapper,
+    "var_20": VARWrapper,
+    "var_24": VARWrapper,
     "var_30": VARWrapper,
     # "mar_b": MARWrapper,
     # "mar_l": MARWrapper,
