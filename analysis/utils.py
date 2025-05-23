@@ -38,6 +38,7 @@ ATTACKS_COLORS = {
 
 AUDIO_MODELS = [
     "musicgen_small",
+    "audiogen_medium",
 ]
 
 MODELS = [
@@ -173,6 +174,7 @@ MODEL_MIA_INDICES_MAPPING = {
 
 MODEL_MIA_ATTACK_NAME_MAPPING = {
     "musicgen_small": "llm_mia_cfg",
+    "audiogen_medium": "llm_mia_cfg",
     "var_16": "llm_mia_cfg",
     "var_20": "llm_mia_cfg",
     "var_24": "llm_mia_cfg",
@@ -192,6 +194,11 @@ MODEL_MIA_ATTACK_NAME_MAPPING = {
     "mdtv1": "combination_attack",
     "dimr": "combination_attack",
     "dimr_g": "combination_attack",
+}
+
+AUDIO_MODEL_DATASET_MAPPING = {
+    "musicgen_small": (("none", "none"), ("musiccaps", "test")),
+    "audiogen_medium": (("audiocaps", "train"), ("audiocaps", "test")),
 }
 
 MODELS_STYLES = {

@@ -19,6 +19,7 @@ from analysis.utils import (
     MODEL_MIA_ATTACK_NAME_MAPPING,
     MIAS_CITATIONS,
     MIAS_ORDER,
+    AUDIO_MODEL_DATASET_MAPPING,
 )
 
 import multiprocessing as mp
@@ -36,13 +37,16 @@ PATH_TO_PLOTS = "analysis/plots/mia_performance"
 def get_features() -> Tuple[List[np.ndarray], List[np.ndarray]]:
     all_members, all_nonmembers = [], []
     for model in tqdm(AUDIO_MODELS):
+        (train_dataset, train_split), (test_dataset, test_split) = AUDIO_MODEL_DATASET_MAPPING[model]
         try:
             members = np.load(
-                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet_train.npz",
+                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_"
+                + f"{train_dataset}_{train_split}.npz",
                 allow_pickle=True,
             )["data"]
             nonmembers = np.load(
-                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet_val.npz",
+                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_"
+                + f"{test_dataset}_{test_split}.npz",
                 allow_pickle=True,
             )["data"]
             all_members.append(members)
