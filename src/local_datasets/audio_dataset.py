@@ -22,7 +22,15 @@ class AudioDataset(Dataset):
         filenames = [filename for filename in os.listdir(audio_dir) if filename[-4:] == ".wav"]
         filenames = sorted(filenames, key=lambda name: int(name[:-4]))
         self.filenames = [os.path.join(audio_dir, filename) for filename in filenames]
-        self.descriptions = pd.read_csv(labels_csv)["caption"].tolist()
+
+        if dataset_cfg.name == "musiccaps":
+            self.descriptions = pd.read_csv(labels_csv)["caption"].tolist()
+        elif dataset_cfg.name == "audiocaps":
+            data = pd.read_csv(labels_csv)
+            indices, captions = data["audiocap_id"].tolist(), data["caption"].tolist()
+            self.descriptions = {index: caption for index, caption in zip(indices, captions)}
+        else:
+            raise Exception(f"Invalid dataset name: {dataset_cfg.name}; expected 'musiccaps' or 'audiocaps'")
 
         self.collate_fn = collate_fn
 
