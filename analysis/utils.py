@@ -36,26 +36,30 @@ ATTACKS_COLORS = {
     )
 }
 
+AUDIO_MODELS = [
+    "musicgen_small",
+]
+
 MODELS = [
     "var_16",
-    # "var_20",
-    # "var_24",
+    "var_20",
+    "var_24",
     "var_30",
-    # "mar_b",
-    # "mar_l",
-    # "mar_h",
-    # "rar_b",
-    # "rar_l",
-    # "rar_xl",
-    # "rar_xxl",
-    # "ldm",
-    # "uvit",
-    # "dit",
-    # "mdtv1",
-    # "mdt",
-    # "dimr",
-    # "dimr_g",
-    # "sit",
+    "mar_b",
+    "mar_l",
+    "mar_h",
+    "rar_b",
+    "rar_l",
+    "rar_xl",
+    "rar_xxl",
+    "ldm",
+    "uvit",
+    "dit",
+    "mdtv1",
+    "mdt",
+    "dimr",
+    "dimr_g",
+    "sit",
 ]
 
 IARs = [
@@ -84,13 +88,13 @@ DMs = [
 ]
 
 _MIAS_CITATIONS = {
-    "Loss": "~\citep{yeom2018lossmia}",
-    "Zlib": "~\citep{carlini2021extractLLM}",
-    "Hinge": "~\citep{bertran2024scalable}",
-    "Min-K\%": "~\citep{shi2024detecting}",
-    # "SURP": "~\citep{zhang2024adaptive}",
-    "Min-K\%++": "~\citep{zhang2024min}",
-    "CAMIA": "~\citep{chang2024context}",
+    "Loss": "~\\citep{yeom2018lossmia}",
+    "Zlib": "~\\citep{carlini2021extractLLM}",
+    "Hinge": "~\\citep{bertran2024scalable}",
+    "Min-K\\%": "~\\citep{shi2024detecting}",
+    # "SURP": "~\\citep{zhang2024adaptive}",
+    "Min-K\\%++": "~\\citep{zhang2024min}",
+    "CAMIA": "~\\citep{chang2024context}",
 }
 
 MIAS_CITATIONS = {mia: f"{mia}{cite}" for mia, cite in _MIAS_CITATIONS.items()}
@@ -100,15 +104,15 @@ LLM_MIAS_INDICES = {
     "Loss": np.array([0]),
     "Zlib": np.array([1]),
     "Hinge": np.array([2]),
-    "Min-K\%": np.arange(3, 8),
-    "Min-K\%++": np.arange(8, 13),
+    "Min-K\\%": np.arange(3, 8),
+    "Min-K\\%++": np.arange(8, 13),
     "CAMIA": np.arange(13, 18),
 }
 
 LLM_MIA_LOSS_INDICES = {
     "Loss": np.array([0]),
     "Zlib": np.array([1]),
-    "Min-K\%": np.arange(2, 7),
+    "Min-K\\%": np.arange(2, 7),
     "CAMIA": np.arange(7, 10),
 }
 
@@ -168,6 +172,7 @@ MODEL_MIA_INDICES_MAPPING = {
 
 
 MODEL_MIA_ATTACK_NAME_MAPPING = {
+    "musicgen_small": "llm_mia_cfg",
     "var_16": "llm_mia_cfg",
     "var_20": "llm_mia_cfg",
     "var_24": "llm_mia_cfg",
