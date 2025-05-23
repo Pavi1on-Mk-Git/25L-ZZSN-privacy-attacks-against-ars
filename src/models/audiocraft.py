@@ -1,8 +1,8 @@
 from src.models.GeneralVARWrapper import GeneralVARWrapper
 import torch
 from torch import Tensor as T
-from audiocraft.audiocraft.models import MusicGen, AudioGen
-from audiocraft.audiocraft.modules.conditioners import ConditioningAttributes
+from audiocraft.models import MusicGen, AudioGen
+from audiocraft.modules.conditioners import ConditioningAttributes
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
