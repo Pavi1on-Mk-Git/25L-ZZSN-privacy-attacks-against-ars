@@ -1,4 +1,4 @@
-name: musicgen_small
+name: audiogen_medium
 
 dataloader: audio
 batch_size: 1

@@ -1,8 +1,8 @@
 from src.models.GeneralVARWrapper import GeneralVARWrapper
 import torch
 from torch import Tensor as T
-from audiocraft.models import MusicGen
-from audiocraft.modules.conditioners import ConditioningAttributes
+from audiocraft.audiocraft.models import MusicGen, AudioGen
+from audiocraft.audiocraft.modules.conditioners import ConditioningAttributes
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -16,10 +16,13 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         match self.model_cfg.name:
             case "musicgen_small":
                 model = MusicGen.get_pretrained("facebook/musicgen-small")
-                self.autocast = model.autocast
-                return model.lm, model.compression_model
+            case "audiogen_medium":
+                model = AudioGen.get_pretrained("facebook/audiogen-medium")
             case _:
                 raise Exception(f"unknown model name: {self.model_cfg.name}")
+
+        self.autocast = model.autocast
+        return model.lm, model.compression_model
 
     def tokenize(self, audios: T) -> T:
         """
