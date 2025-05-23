@@ -4,4 +4,5 @@ from src.local_datasets.audio_dataset import AudioDataset
 datasets = {
     "imagenet": ImageFolderDataset,
     "musiccaps": AudioDataset,
+    "audiocaps": AudioDataset,
 }

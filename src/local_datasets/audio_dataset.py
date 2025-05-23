@@ -10,8 +10,14 @@ from audiocraft.data.audio import audio_read
 # @TODO: perhaps add partitioning per gpu like in the image dataset, though number of GPUs is set to 1 anyway
 class AudioDataset(Dataset):
     def __init__(self, dataset_cfg):
-        audio_dir = dataset_cfg.audio_dir
-        labels_csv = dataset_cfg.labels_csv
+        if dataset_cfg.split == "train":
+            audio_dir = dataset_cfg.train_audio_dir
+            labels_csv = dataset_cfg.train_labels_csv
+        elif dataset_cfg.split == "test":
+            audio_dir = dataset_cfg.test_audio_dir
+            labels_csv = dataset_cfg.test_labels_csv
+        else:
+            raise Exception(f"Invalid dataset split: {dataset_cfg.split}; expected 'train' or 'test'")
 
         filenames = [filename for filename in os.listdir(audio_dir) if filename[-4:] == ".wav"]
         filenames = sorted(filenames, key=lambda name: int(name[:-4]))

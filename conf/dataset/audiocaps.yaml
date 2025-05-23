@@ -1,0 +1,5 @@
+name: audiocaps
+train_audio_dir: /net/tscratch/people/plgpavi1on/audiocaps/train
+train_labels_csv: /net/tscratch/people/plgpavi1on/audiocaps/train.csv
+test_audio_dir: /net/tscratch/people/plgpavi1on/audiocaps/test
+test_labels_csv: /net/tscratch/people/plgpavi1on/audiocaps/test.csv
