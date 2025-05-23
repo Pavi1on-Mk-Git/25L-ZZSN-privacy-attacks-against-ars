@@ -24,6 +24,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         self.autocast = model.autocast
         return model.lm, model.compression_model
 
+    @torch.no_grad()
     def tokenize(self, audios: T) -> T:
         """
         Tokenizes the images, return tensor of shape (batch_size, seq_len)
@@ -33,6 +34,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         B, K, S = tokens.shape
         return tokens.reshape(B, K * S)
 
+    @torch.no_grad()
     def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> T:
         """
         Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)

@@ -12,7 +12,6 @@ class FeatureExtractor(DataSource):
 
     def process_batch(self, batch: Tuple[T, T], *args, **kwargs) -> T: ...
 
-    @torch.no_grad
     def process_data(self, *args, **kwargs) -> T:
         assert self.model is not None
         loader = loaders[self.model_cfg.dataloader](self.config, self.model_cfg, self.dataset_cfg)
