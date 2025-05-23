@@ -12,17 +12,14 @@ class FeatureExtractor(DataSource):
 
     def process_batch(self, batch: Tuple[T, T], *args, **kwargs) -> T: ...
 
+    @torch.no_grad
     def process_data(self, *args, **kwargs) -> T:
         assert self.model is not None
-        loader = loaders[self.model_cfg.dataloader](
-            self.config, self.model_cfg, self.dataset_cfg
-        )
+        loader = loaders[self.model_cfg.dataloader](self.config, self.model_cfg, self.dataset_cfg)
         features = []
 
         samples_processed = 0
-        for batch in tqdm(
-            loader, total=int(self.total_samples / self.model_cfg.batch_size + 1)
-        ):
+        for batch in tqdm(loader, total=int(self.total_samples / self.model_cfg.batch_size + 1)):
             features.append(self.process_batch(batch, *args, **kwargs))
             samples_processed += batch[0].shape[0]
             if samples_processed >= self.total_samples:
