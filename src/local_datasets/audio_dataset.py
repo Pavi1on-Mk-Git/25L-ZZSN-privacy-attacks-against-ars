@@ -5,6 +5,7 @@ import torch
 from torch.types import Tensor as T
 import pandas as pd
 from audiocraft.data.audio import audio_read
+from torchaudio.functional import resample
 
 
 # @TODO: perhaps add partitioning per gpu like in the image dataset, though number of GPUs is set to 1 anyway
@@ -47,7 +48,6 @@ class AudioDataset(Dataset):
     def _read_audio_as_mono(self, filename: str) -> T:
         try:
             audio, sample_rate = audio_read(filename)
-            print(f"{sample_rate=}")
         except Exception:
             print(f"Error reading audio file {filename}")
             raise
@@ -56,9 +56,7 @@ class AudioDataset(Dataset):
             channels = audio.shape[0]
             audio = torch.unsqueeze(torch.sum(audio, dim=0) / channels, 0)
 
-        print(f"{audio.shape[1]=}")
-
-        return audio
+        return resample(audio, sample_rate, 16000)
 
 
 def collate_fn(batch):
