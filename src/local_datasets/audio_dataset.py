@@ -46,7 +46,8 @@ class AudioDataset(Dataset):
 
     def _read_audio_as_mono(self, filename: str) -> T:
         try:
-            audio = audio_read(filename)[0]
+            audio, sample_rate = audio_read(filename)
+            print(f"{sample_rate=}")
         except Exception:
             print(f"Error reading audio file {filename}")
             raise
@@ -54,6 +55,8 @@ class AudioDataset(Dataset):
         if audio.shape[0] > 1:
             channels = audio.shape[0]
             audio = torch.unsqueeze(torch.sum(audio, dim=0) / channels, 0)
+
+        print(f"{audio.shape[1]=}")
 
         return audio
 
