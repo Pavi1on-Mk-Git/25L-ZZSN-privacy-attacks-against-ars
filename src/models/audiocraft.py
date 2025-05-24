@@ -32,7 +32,6 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         tokens, _ = self.tokenizer.encode(audios)
 
         B, K, S = tokens.shape
-        print(f"Codebooks count: {K}")
         return tokens.reshape(B, K * S)
 
     @torch.no_grad()
@@ -68,12 +67,12 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     @torch.no_grad()
-    def get_loss_per_token(self, images: T, classes: T, *args, **kwargs) -> T:
+    def get_loss_per_token(self, audios: T, conditioning: T, *args, **kwargs) -> T:
         """
         Computes the loss per token, returns tensor of shape (batch_size, seq_len)
         """
-        tokens = self.tokenize(images)
-        logits = self.forward(images, classes)
+        tokens = self.tokenize(audios)
+        logits = self.forward(audios, conditioning)
         loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
         return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
 
