@@ -32,6 +32,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         tokens, _ = self.tokenizer.encode(audios)
 
         B, K, S = tokens.shape
+        print(f"Codebooks count: {K}")
         return tokens.reshape(B, K * S)
 
     @torch.no_grad()
