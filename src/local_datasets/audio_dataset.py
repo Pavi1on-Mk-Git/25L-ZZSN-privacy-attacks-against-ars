@@ -55,7 +55,6 @@ class AudioDataset(Dataset):
             channels = audio.shape[0]
             audio = torch.unsqueeze(torch.sum(audio, dim=0) / channels, 0)
 
-        print(f"Returning {filename}")
         return audio
 
 
