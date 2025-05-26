@@ -4,6 +4,7 @@ from torch import Tensor as T
 from audiocraft.models import MusicGen, AudioGen
 from audiocraft.modules.conditioners import ConditioningAttributes
 from audiocraft.solvers.musicgen import MusicGenSolver
+from audiocraft.data.sound_dataset import SoundInfo
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -41,14 +42,19 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
         """
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
+
+        tokenized = self.generator.condition_provider.tokenize(attributes)
+        condition_tensors = self.generator.condition_provider(tokenized)
+
         tokens, _ = self.tokenizer.encode(audios)
         with self.autocast:
-            out = self.generator.compute_predictions(tokens, attributes).logits
+            out = self.generator.compute_predictions(tokens, [], condition_tensors).logits
             if is_cfg:
-                out_cfg = self.generator.compute_predictions(
-                    audios, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
-                ).logits
-                out = out_cfg - out
+                assert False, "shouldn't pass is_cfg=True"
+                # out_cfg = self.generator.compute_predictions(
+                #     audios, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
+                # ).logits
+                # out = out_cfg - out
 
         B, K, S, card = out.shape
         out = out.reshape(B, K * S, card)
