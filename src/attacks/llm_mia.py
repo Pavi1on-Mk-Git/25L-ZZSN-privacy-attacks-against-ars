@@ -2,7 +2,6 @@ from src.attacks import FeatureExtractor
 from torch import Tensor as T
 from torch.nn import functional as F
 import torch
-from audiocraft.solvers.musicgen import MusicGenSolver
 
 from typing import Tuple
 import zlib
@@ -209,12 +208,8 @@ class LLMMIAExtractor(FeatureExtractor):
             logits = logits - logits_uncond
 
         if mask is not None:
-            logits_flat, tokens_flat = self.model.flatten_with_mask(logits, tokens, mask)
+            logits, tokens = self.model.flatten_with_mask(logits, tokens, mask)
 
-        token_losses = self.model.get_loss_for_tokens(logits_flat, tokens_flat)
+        token_losses = self.model.get_loss_for_tokens(logits, tokens)
 
-        result = self.compute_all(logits_flat, tokens_flat, token_losses)
-
-        result[:, :, 0] = MusicGenSolver._compute_cross_entropy(None, logits, tokens, mask)[0]
-
-        return result
+        return self.compute_all(logits, tokens, token_losses)
