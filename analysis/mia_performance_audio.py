@@ -64,16 +64,13 @@ def get_row(members: np.ndarray, nonmembers: np.ndarray, model: str) -> List:
     NREPS = 250
     np.random.seed(42)
 
-    print(f"{members.shape=}")
-    print(f"{nonmembers.shape=}")
-
     members_lower = True
     for ft_idx, _ in tqdm(
         product(range(members.shape[2]), range(NREPS)),
         desc=model,
         total=members.shape[2] * NREPS,
     ):
-        indices = np.random.permutation(len(members))[:SIZE]
+        indices = np.random.permutation(min(len(members), len(nonmembers)))[:SIZE]
         members_feature = members[indices, 0, ft_idx]
         nonmembers_feature = nonmembers[indices, 0, ft_idx]
 
