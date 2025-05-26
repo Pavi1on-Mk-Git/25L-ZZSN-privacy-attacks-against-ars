@@ -43,11 +43,11 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
         tokens, _ = self.tokenizer.encode(audios)
         with self.autocast:
-            out = self.generator.forward(tokens, attributes)
+            out = self.generator.compute_predictions(tokens, attributes).logits
             if is_cfg:
-                out_cfg = self.generator.forward(
+                out_cfg = self.generator.compute_predictions(
                     audios, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
-                )
+                ).logits
                 out = out_cfg - out
 
         B, K, S, card = out.shape
