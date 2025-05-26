@@ -35,10 +35,6 @@ class AudioDataset(Dataset):
         else:
             raise Exception(f"Invalid dataset split: {dataset_cfg.split}; expected 'train' or 'test'")
 
-        filenames = [filename for filename in os.listdir(audio_dir) if filename[-4:] == ".wav"]
-        filenames = sorted(filenames, key=lambda name: int(name[:-4]))
-        self.filenames = [os.path.join(audio_dir, filename) for filename in filenames]
-
         if dataset_cfg.name == "musiccaps":
             self.descriptions = pd.read_csv(labels_csv)["caption"].tolist()
         elif dataset_cfg.name == "audiocaps":
@@ -48,6 +44,18 @@ class AudioDataset(Dataset):
         else:
             raise Exception(f"Invalid dataset name: {dataset_cfg.name}; expected 'musiccaps' or 'audiocaps'")
 
+        filenames = [filename for filename in os.listdir(audio_dir) if filename[-4:] == ".wav"]
+        filenames = sorted(filenames, key=lambda name: int(name[:-4]))
+        filenames = [os.path.join(audio_dir, filename) for filename in filenames]
+
+        self.filenames = []
+        # filter out captions with "speech"
+        for filename in filenames:
+            caption_idx = _get_sample_index(filename)
+            caption = self.descriptions[caption_idx]
+            if "speech" not in caption and "speak" not in caption:
+                self.filenames.append(filename)
+
         self.collate_fn = collate_fn
 
     def __len__(self):
@@ -55,11 +63,8 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        caption_idx = int(filename[:-4].split("/")[-1])
-        print(f"caption={self.descriptions[caption_idx]}")
+        caption_idx = _get_sample_index(filename)
         caption = preprocess_caption(self.descriptions[caption_idx])
-
-        print(f"preprocessed={caption}")
 
         return self._read_audio_as_mono(filename), caption
 
@@ -72,6 +77,10 @@ class AudioDataset(Dataset):
             raise
 
         return audio
+
+
+def _get_sample_index(filename: str) -> int:
+    return int(filename[:-4].split("/")[-1])
 
 
 def preprocess_caption(caption: str) -> str:
