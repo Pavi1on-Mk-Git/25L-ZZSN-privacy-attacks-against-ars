@@ -183,6 +183,11 @@ class LLMMIAExtractor(FeatureExtractor):
 
         tokens = self.model.tokenize(images)
         logits = self.model.forward(images, classes, is_cfg=False)
+        if isinstance(logits, tuple):
+            logits, mask = logits
+        else:
+            mask = None
+
         if self.attack_cfg.is_cfg:
             logits_uncond = self.model.forward(
                 images,
@@ -198,7 +203,13 @@ class LLMMIAExtractor(FeatureExtractor):
                 ),
                 is_cfg=False,
             )
+            if isinstance(logits_uncond, tuple):
+                logits_uncond = logits_uncond[0]
             logits = logits - logits_uncond
+
+        if mask is not None:
+            logits, tokens = self.model.flatten_with_mask(logits, tokens, mask)
+
         token_losses = self.model.get_loss_for_tokens(logits, tokens)
 
         return self.compute_all(logits, tokens, token_losses)

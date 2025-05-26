@@ -4,7 +4,6 @@ from torch import Tensor as T
 from audiocraft.models import MusicGen, AudioGen
 from audiocraft.modules.conditioners import ConditioningAttributes
 from audiocraft.solvers.musicgen import MusicGenSolver
-from audiocraft.data.sound_dataset import SoundInfo
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -33,10 +32,10 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         tokens, _ = self.tokenizer.encode(audios)
 
-        B, K, S = tokens.shape
-        return tokens.reshape(B, K * S)
+        return tokens  # B, K, T
 
-    def _forward_with_mask(self, audios: T, conditioning: list[str]) -> tuple[T, T]:
+    @torch.no_grad()
+    def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> tuple[T, T]:
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
 
         tokenized = self.generator.condition_provider.tokenize(attributes)
@@ -46,19 +45,31 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
         with self.autocast:
             out = self.generator.compute_predictions(tokens, [], condition_tensors)
-        return out.logits, out.mask
+        return (out.logits, out.mask)  # (B, K, T, card), (B, K, T)
 
-    @torch.no_grad()
-    def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> T:
-        """
-        Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
-        """
-        assert not is_cfg, "unexpected is_cfg"
-        out, _ = self._forward_with_mask(audios, conditioning)
+    def flatten_with_mask(self, logits: T, tokens: T, mask: T) -> tuple[T, T]:
+        B, K, T, _ = logits.shape
+        assert tokens.shape == (B, K, T)
+        assert mask.shape == (B, K, T)
+        assert B == 1  # assuming batch_size = 1
 
-        B, K, S, card = out.shape
-        out = out.reshape(B, K * S, card)
-        return out
+        result_tokens = []
+        result_logits = []
+
+        for k in range(K):
+            logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # T, card
+            tokens_k = tokens[:, k, ...].contiguous().view(-1)  # T
+            mask_k = mask[:, k, ...].contiguous().view(-1)  # T
+
+            ce_logits = logits_k[mask_k]
+            ce_tokens = tokens_k[mask_k]
+
+            result_logits.append(ce_logits)
+            result_tokens.append(ce_tokens)
+
+        logits = torch.concat(result_logits, dim=0).unsqueeze(0)  # 1, seq_len, card
+        tokens = torch.concat(result_tokens, dim=0).unsqueeze(0)  # 1, seq_len
+        return logits, tokens
 
     @torch.no_grad()
     def get_token_list(self, images: T, *args, **kwargs) -> list[T]:
@@ -83,8 +94,9 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
         MusicGenSolver._compute_cross_entropy(None, logits, tokens, mask)
 
-        loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
-        return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
+        # loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
+        # return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
+        raise NotImplementedError
 
     @torch.no_grad()
     def sample(
@@ -118,7 +130,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         preds = preds.permute(0, 2, 1)
 
         loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
-        return loss_fn(preds, ground_truth)  # B, K*S
+        return loss_fn(preds, ground_truth)  # B, seq_len
 
     @torch.no_grad()
     def get_flops_forward_train(self) -> int:
