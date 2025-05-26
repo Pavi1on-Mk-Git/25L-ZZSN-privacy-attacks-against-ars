@@ -7,6 +7,18 @@ import pandas as pd
 from audiocraft.data.audio import audio_read
 from audiocraft.data.audio_utils import convert_audio
 
+import nltk
+from nltk.corpus import wordnet, stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag
+import string
+
+nltk.download("stopwords")
+nltk.download("punkt_tab")
+nltk.download("averaged_perceptron_tagger_eng")
+nltk.download("wordnet")
+
 
 # @TODO: perhaps add partitioning per gpu like in the image dataset, though number of GPUs is set to 1 anyway
 class AudioDataset(Dataset):
@@ -44,7 +56,7 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         filename = self.filenames[idx]
         caption_idx = int(filename[:-4].split("/")[-1])
-        caption = self.descriptions[caption_idx]
+        caption = preprocess_caption(self.descriptions[caption_idx])
 
         return self._read_audio_as_mono(filename), caption
 
@@ -57,6 +69,34 @@ class AudioDataset(Dataset):
             raise
 
         return audio
+
+
+def preprocess_caption(caption: str) -> str:
+    lemmatizer = WordNetLemmatizer()
+    stop_words = set(stopwords.words("english"))
+
+    tokens = word_tokenize(caption)
+    tagged = pos_tag(tokens)
+
+    tagged = [(word, tag) for word, tag in tagged if not word.lower() in stop_words and word not in string.punctuation]
+
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(word, _get_wordnet_sentence_position(tag)) for word, tag in tagged]
+
+    return " ".join(tokens)
+
+
+def _get_wordnet_sentence_position(treebank_tag):
+    if treebank_tag.startswith("J"):
+        return wordnet.ADJ
+    elif treebank_tag.startswith("V"):
+        return wordnet.VERB
+    elif treebank_tag.startswith("N"):
+        return wordnet.NOUN
+    elif treebank_tag.startswith("R"):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
 
 
 def collate_fn(batch):
