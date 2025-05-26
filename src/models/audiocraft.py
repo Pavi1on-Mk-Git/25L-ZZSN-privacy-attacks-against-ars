@@ -48,27 +48,39 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         return (out.logits, out.mask)  # (B, K, T, card), (B, K, T)
 
     def flatten_with_mask(self, logits: T, tokens: T, mask: T) -> tuple[T, T]:
-        B, K, T, _ = logits.shape
+        B, K, T, card = logits.shape
         assert tokens.shape == (B, K, T)
         assert mask.shape == (B, K, T)
         assert B == 1  # assuming batch_size = 1
 
-        result_tokens = []
-        result_logits = []
+        logits = torch.concat([token_logits for token_logits in logits.squeeze(0).transpose(0, 1)], axis=0)
+        tokens = torch.concat([token for token in tokens.squeeze(0).transpose(0, 1)], axis=0)
+        mask = torch.concat([token_mask for token_mask in mask.squeeze(0).transpose(0, 1)], axis=0)
 
-        for k in range(K):
-            logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # T, card
-            tokens_k = tokens[:, k, ...].contiguous().view(-1)  # T
-            mask_k = mask[:, k, ...].contiguous().view(-1)  # T
+        assert logits.shape == (K * T, card)
+        assert tokens.shape == (K * T,)
+        assert mask.shape == (K * T,)
 
-            ce_logits = logits_k[mask_k]
-            ce_tokens = tokens_k[mask_k]
+        logits = logits[mask].unsqueeze(0)
+        tokens = tokens[mask].unsqueeze(0)
 
-            result_logits.append(ce_logits)
-            result_tokens.append(ce_tokens)
+        # result_tokens = []
+        # result_logits = []
 
-        logits = torch.concat(result_logits, dim=0).unsqueeze(0)  # 1, seq_len, card
-        tokens = torch.concat(result_tokens, dim=0).unsqueeze(0)  # 1, seq_len
+        # for k in range(K):
+        #     logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # T, card
+        #     tokens_k = tokens[:, k, ...].contiguous().view(-1)  # T
+        #     mask_k = mask[:, k, ...].contiguous().view(-1)  # T
+
+        #     ce_logits = logits_k[mask_k]
+        #     ce_tokens = tokens_k[mask_k]
+
+        #     result_logits.append(ce_logits)
+        #     result_tokens.append(ce_tokens)
+
+        # logits = torch.concat(result_logits, dim=0).unsqueeze(0)  # 1, seq_len, card
+        # tokens = torch.concat(result_tokens, dim=0).unsqueeze(0)  # 1, seq_len
+
         return logits, tokens
 
     @torch.no_grad()
