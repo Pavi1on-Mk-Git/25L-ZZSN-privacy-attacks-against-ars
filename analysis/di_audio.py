@@ -18,7 +18,7 @@ from analysis.utils import (
     set_plt,
     ATTACKS_NAME_MAPPING,
     MODELS_NAME_MAPPING,
-    MODELS_ORDER,
+    AUDIO_MODELS_ORDER,
     RESAMPLING_CNT,
     ATTACKS,
     MODELS,
@@ -55,7 +55,21 @@ def remove_features(features, SURP_IDX):
 
 
 def preprocess_features(members: np.ndarray, nonmembers: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    B = members.shape[0]
+    B, _, n_features = members.shape
+
+    new_members = []
+    new_nonmembers = []
+
+    for feature in range(n_features):
+        members_feature = members[:, :, feature]
+        nonmembers_feature = nonmembers[:, :, feature]
+        if np.isinf(members_feature).any() or np.isinf(nonmembers_feature).any():
+            continue
+        new_members.append(members[:, :, feature])
+        new_nonmembers.append(nonmembers[:, :, feature])
+
+    members = np.stack(new_members, axis=2)
+    nonmembers = np.stack(new_nonmembers, axis=2)
 
     members[np.isnan(members)] = 0
     nonmembers[np.isnan(nonmembers)] = 0
@@ -134,7 +148,7 @@ def get_row(
         )
     pd.DataFrame(
         out,
-        columns=["Attack", "Model", "CLF", "n", "pvalue", "is_correct_order", "r"],
+        columns=["Attack", "Model", "n", "pvalue", "is_correct_order", "r"],
     ).to_csv(
         f"{PATH_TO_PLOTS}/tmp/pvalue_per_sample_{model}_{attack}_{n}.csv",
         index=False,
@@ -147,7 +161,7 @@ def get_data() -> list:
         [n for n in range(2, 11, 1)]
         + [n for n in range(20, 110, 10)]
         + [n for n in range(200, 1100, 100)]
-        + [n for n in range(2000, 11_000, 1000)]
+        + [n for n in range(2000, 4_000, 1000)]
     )
     indices_total = np.arange(3_000)
 
@@ -168,7 +182,7 @@ def get_data() -> list:
             if f != "pvalue_per_sample.csv" and f.endswith(".csv")
         ]
     )
-    data = data.sort_values(by="Model", key=lambda col: col.map(lambda e: MODELS_ORDER.index(e)))
+    data = data.sort_values(by="Model", key=lambda col: col.map(lambda e: AUDIO_MODELS_ORDER.index(e)))
     return data
 
 
