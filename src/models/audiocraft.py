@@ -36,25 +36,25 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         B, K, S = tokens.shape
         return tokens.reshape(B, K * S)
 
-    @torch.no_grad()
-    def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> T:
-        """
-        Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
-        """
+    def _forward_with_mask(self, audios: T, conditioning: list[str]) -> tuple[T, T]:
         attributes = [ConditioningAttributes(text={"description": description}) for description in conditioning]
 
         tokenized = self.generator.condition_provider.tokenize(attributes)
         condition_tensors = self.generator.condition_provider(tokenized)
 
         tokens, _ = self.tokenizer.encode(audios)
+
         with self.autocast:
-            out = self.generator.compute_predictions(tokens, [], condition_tensors).logits
-            if is_cfg:
-                assert False, "shouldn't pass is_cfg=True"
-                # out_cfg = self.generator.compute_predictions(
-                #     audios, [ConditioningAttributes(text={"description": [None] * len(conditioning)})]
-                # ).logits
-                # out = out_cfg - out
+            out = self.generator.compute_predictions(tokens, [], condition_tensors)
+        return out.logits, out.mask
+
+    @torch.no_grad()
+    def forward(self, audios: T, conditioning: list[str], is_cfg: bool) -> T:
+        """
+        Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
+        """
+        assert not is_cfg, "unexpected is_cfg"
+        out, _ = self._forward_with_mask(audios, conditioning)
 
         B, K, S, card = out.shape
         out = out.reshape(B, K * S, card)
@@ -79,10 +79,9 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         Computes the loss per token, returns tensor of shape (batch_size, seq_len)
         """
         tokens = self.tokenize(audios)
-        logits = self.forward(audios, conditioning)
+        logits, mask = self._forward_with_mask(audios, conditioning)
 
-        # @TODO: if batch_size > 1, pass masks here
-        MusicGenSolver._compute_cross_entropy(None, logits, tokens, torch.ones_like(tokens))
+        MusicGenSolver._compute_cross_entropy(None, logits, tokens, mask)
 
         loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
         return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
