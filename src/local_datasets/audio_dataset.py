@@ -56,7 +56,10 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         filename = self.filenames[idx]
         caption_idx = int(filename[:-4].split("/")[-1])
+        print(f"caption={self.descriptions[caption_idx]}")
         caption = preprocess_caption(self.descriptions[caption_idx])
+
+        print(f"preprocessed={caption}")
 
         return self._read_audio_as_mono(filename), caption
 
@@ -78,7 +81,11 @@ def preprocess_caption(caption: str) -> str:
     tokens = word_tokenize(caption)
     tagged = pos_tag(tokens)
 
-    tagged = [(word, tag) for word, tag in tagged if not word.lower() in stop_words and word not in string.punctuation]
+    tagged = [
+        (word, tag)
+        for word, tag in tagged
+        if not word.lower() in stop_words and word not in string.punctuation and not word.isdigit()
+    ]
 
     lemmatizer = WordNetLemmatizer()
     tokens = [lemmatizer.lemmatize(word, _get_wordnet_sentence_position(tag)) for word, tag in tagged]
