@@ -3,6 +3,7 @@ import torch
 from torch import Tensor as T
 from audiocraft.models import MusicGen, AudioGen
 from audiocraft.modules.conditioners import ConditioningAttributes
+from audiocraft.solvers.musicgen import MusicGenSolver
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -73,6 +74,10 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         tokens = self.tokenize(audios)
         logits = self.forward(audios, conditioning)
+
+        # @TODO: if batch_size > 1, pass masks here
+        MusicGenSolver._compute_cross_entropy(None, logits, tokens, torch.ones_like(tokens))
+
         loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
         return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
 
