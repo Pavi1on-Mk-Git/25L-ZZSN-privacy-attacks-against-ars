@@ -53,16 +53,29 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         assert mask.shape == (B, K, T)
         assert B == 1  # assuming batch_size = 1
 
-        logits = torch.concat([token_logits for token_logits in logits.squeeze(0).transpose(0, 1)], axis=0)
-        tokens = torch.concat([token for token in tokens.squeeze(0).transpose(0, 1)], axis=0)
-        mask = torch.concat([token_mask for token_mask in mask.squeeze(0).transpose(0, 1)], axis=0)
+        mask = mask[0, 0, :]
+        logits = logits[0, 0, :, :][mask]
+        tokens = tokens[0, 0, :][mask]
 
-        assert logits.shape == (K * T, card)
-        assert tokens.shape == (K * T,)
-        assert mask.shape == (K * T,)
+        assert logits.shape == (T, card)
+        assert tokens.shape == (T,)
 
-        logits = logits[mask].unsqueeze(0)
-        tokens = tokens[mask].unsqueeze(0)
+        logits = logits.unsqueeze(0)
+        tokens = tokens.unsqueeze(0)
+
+        assert logits.shape == (1, T, card)
+        assert tokens.shape == (1, T)
+
+        # logits = torch.concat([token_logits for token_logits in logits.squeeze(0).transpose(0, 1)], axis=0)
+        # tokens = torch.concat([token for token in tokens.squeeze(0).transpose(0, 1)], axis=0)
+        # mask = torch.concat([token_mask for token_mask in mask.squeeze(0).transpose(0, 1)], axis=0)
+
+        # assert logits.shape == (K * T, card)
+        # assert tokens.shape == (K * T,)
+        # assert mask.shape == (K * T,)
+
+        # logits = logits[mask].unsqueeze(0)
+        # tokens = tokens[mask].unsqueeze(0)
 
         # result_tokens = []
         # result_logits = []
