@@ -32,6 +32,7 @@ feature_extractors: Dict[str, FeatureExtractor] = {
     "gen_memorized": GenerateCandidates,
     "find_memorized": ExtractMemorized,
     "llm_mia_cfg": LLMMIACFGExtractor,
+    "llm_mia_codebooks": LLMMIACFGExtractor,
     "defense": DefenseExtractor,
     "defense_loss": DefenseLossExtractor,
 }

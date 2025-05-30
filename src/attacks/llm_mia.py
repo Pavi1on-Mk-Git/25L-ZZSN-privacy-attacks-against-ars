@@ -2,6 +2,7 @@ from src.attacks import FeatureExtractor
 from torch import Tensor as T
 from torch.nn import functional as F
 import torch
+from src.models import AudiocraftModelWrapper
 
 from typing import Tuple
 import zlib
@@ -176,6 +177,9 @@ class LLMMIAExtractor(FeatureExtractor):
         return features  # B, 1, N_features
 
     def process_batch(self, batch: Tuple[T, T | list[str]]) -> T:
+        if self.attack_cfg.is_codebooks:
+            return self.process_batch_codebooks(batch)
+
         images, classes = batch
         images = images.to(self.device)
         if type(classes) is T:
@@ -208,8 +212,32 @@ class LLMMIAExtractor(FeatureExtractor):
             logits = logits - logits_uncond
 
         if mask is not None:
-            logits, tokens = self.model.flatten_with_mask(logits, tokens, mask)
+            logits, tokens = self.model.get_only_last_codebook(logits, tokens, mask)
 
         token_losses = self.model.get_loss_for_tokens(logits, tokens)
 
         return self.compute_all(logits, tokens, token_losses)
+
+    def process_batch_codebooks(self, batch: Tuple[T, T | list[str]]) -> T:
+        self.model: AudiocraftModelWrapper
+
+        audios, captions = batch
+        audios = audios.to(self.device)
+
+        tokens = self.model.tokenize(audios)
+        logits, mask = self.model.forward(audios, captions, is_cfg=False)
+
+        if self.attack_cfg.is_cfg:
+            logits_uncond = self.model.forward(audios, [None] * len(captions), is_cfg=False)[0]
+            logits = logits - logits_uncond
+
+        all_logits, all_tokens = self.model.get_list_of_codebooks(logits, tokens, mask)
+
+        results = []
+
+        for codebook_logits, codebook_tokens in zip(all_logits, all_tokens):
+            token_losses = self.model.get_loss_for_tokens(codebook_logits, codebook_tokens)
+            codebook_features = self.compute_all(codebook_logits, codebook_tokens, token_losses)
+            results.append(codebook_features)
+
+        return torch.concat(results, dim=2)
