@@ -115,9 +115,9 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         result_logits = []
         result_tokens = []
         for k in range(K):
-            mask = mask[0, k, :]
-            codebook_logits = logits[0, k, :, :][mask]
-            codebook_tokens = tokens[0, k, :][mask]
+            codebook_mask = mask[0, k, :]
+            codebook_logits = logits[0, k, :, :][codebook_mask]
+            codebook_tokens = tokens[0, k, :][codebook_mask]
 
             codebook_logits = codebook_logits.unsqueeze(0)
             codebook_tokens = codebook_tokens.unsqueeze(0)
