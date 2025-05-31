@@ -49,7 +49,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
             out = self.generator.compute_predictions(tokens, [], condition_tensors)
         return (out.logits, out.mask)  # (B, K, T, card), (B, K, T)
 
-    def get_only_last_codebook(self, logits: T, tokens: T, mask: T) -> tuple[T, T]:
+    def get_only_first_codebook(self, logits: T, tokens: T, mask: T) -> tuple[T, T]:
         B, K, T, card = logits.shape
         assert tokens.shape == (B, K, T)
         assert mask.shape == (B, K, T)
