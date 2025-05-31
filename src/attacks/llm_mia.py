@@ -49,21 +49,10 @@ class LLMMIAExtractor(FeatureExtractor):
         return sigma  # B, N_tokens
 
     def get_min_k_plus(self, token_logprobas: T, mu: T, sigma: T) -> T:
-        print(f"{(token_logprobas - mu)=}")
-        print(f"{(sigma + 1e-6)=}")
         return (token_logprobas - mu) / (sigma + 1e-6)  # B, N_tokens
 
     def get_min_k_plus_logprobas(self, token_logprobas: T, mu: T, sigma: T, k: int) -> T:
-        print(f"{token_logprobas=}")
-        print(f"{mu=}")
-        print(f"{sigma=}")
-        print(f"{k=}")
-
         minkplus = self.get_min_k_plus(token_logprobas, mu, sigma)
-
-        print(f"{minkplus=}")
-        print(f"{torch.topk(-minkplus, k, dim=1).values=}")
-        print(f"{torch.topk(-minkplus, k, dim=1).values.mean(dim=1)=}")
 
         # negative because we want members to have lower values
         return torch.topk(-minkplus, k, dim=1).values.mean(dim=1).unsqueeze(1)  # B, 1

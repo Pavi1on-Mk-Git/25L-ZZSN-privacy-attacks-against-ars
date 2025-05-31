@@ -47,7 +47,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
         with self.autocast:
             out = self.generator.compute_predictions(tokens, [], condition_tensors)
-        return (out.logits, out.mask)  # (B, K, T, card), (B, K, T)
+        return (out.logits.to(torch.float32), out.mask)  # (B, K, T, card), (B, K, T)
 
     def get_only_first_codebook(self, logits: T, tokens: T, mask: T) -> tuple[T, T]:
         B, K, T, card = logits.shape
