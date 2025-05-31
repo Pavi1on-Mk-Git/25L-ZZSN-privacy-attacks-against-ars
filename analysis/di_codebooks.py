@@ -41,6 +41,7 @@ PVALUES = [0.01, 0.05]
 NSAMPLES_TO_SHOW = [10, 100, 500, 1000, 5000, 10000]
 REMOVE_SURP = True
 REMOVE_CAMIA = True
+REMOVE_MINK_PLUS = True
 
 PATH_TO_FEATURES = "out/features"
 PATH_TO_PLOTS = "analysis/plots/di"
@@ -48,7 +49,7 @@ PATH_TO_PLOTS = "analysis/plots/di"
 CAMIA_IDX_MAR = np.arange(7, 10)
 
 NUM_CODEBOOKS = 4
-USED_CODEBOOKS = [0, 1]
+USED_CODEBOOKS = [0]
 
 
 def remove_features(features, SURP_IDX):
@@ -90,7 +91,11 @@ def get_codebooks(features, codebooks):
 
     for k in range(NUM_CODEBOOKS):
         if k in codebooks:
-            result.append(features[:, :, 18 * k : 18 * (k + 1)])
+            codebook_features = features[:, :, 18 * k : 18 * (k + 1)]
+            if REMOVE_MINK_PLUS:
+                codebook_features = np.concat([codebook_features[:, :, :8], codebook_features[:, :, 13:]], axis=2)
+
+            result.append(codebook_features)
 
     return np.concat(result, axis=2)
 
