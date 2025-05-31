@@ -39,7 +39,8 @@ ATTACKS_COLORS = {
 
 AUDIO_MODELS = [
     # "musicgen_small",
-    "audiogen_medium",
+    # "audiogen_medium",
+    "figaro",
 ]
 
 MODELS = [
@@ -131,6 +132,7 @@ DM_MIA_INDICES = {
 MODELS_NAME_MAPPING = {
     "musicgen_small": "MusicGen (small)",
     "audiogen_medium": "AudioGen",
+    "figaro": "Figaro",
     "var_16": "VAR-$\\mathit{d}$16",
     "var_20": "VAR-$\\mathit{d}$20",
     "var_24": "VAR-$\\mathit{d}$24",
@@ -155,6 +157,7 @@ MODELS_NAME_MAPPING = {
 MODEL_MIA_INDICES_MAPPING = {
     "musicgen_small": LLM_MIAS_INDICES,
     "audiogen_medium": LLM_MIAS_INDICES,
+    "figaro": LLM_MIAS_INDICES,
     "var_16": LLM_MIAS_INDICES,
     "var_20": LLM_MIAS_INDICES,
     "var_24": LLM_MIAS_INDICES,
@@ -180,6 +183,7 @@ MODEL_MIA_INDICES_MAPPING = {
 MODEL_MIA_ATTACK_NAME_MAPPING = {
     "musicgen_small": "llm_mia_cfg",
     "audiogen_medium": "llm_mia_cfg",
+    "figaro": "llm_mia_cfg",
     "var_16": "llm_mia_cfg",
     "var_20": "llm_mia_cfg",
     "var_24": "llm_mia_cfg",
@@ -204,6 +208,7 @@ MODEL_MIA_ATTACK_NAME_MAPPING = {
 AUDIO_MODEL_DATASET_MAPPING = {
     "musicgen_small": (("none", "none"), ("musiccaps", "test")),
     "audiogen_medium": (("audiocaps", "train"), ("audiocaps", "test")),
+    "figaro": (("lakhmidi", "train"), ("lakhmidi", "test")),
 }
 
 MODELS_STYLES = {

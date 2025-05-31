@@ -24,7 +24,7 @@ def get_figaro_dataloader(config: DictConfig, model_cfg: DictConfig, dataset_cfg
         file_path = data_dir / rel_path
         files.append(str(file_path))
 
-    dataset = MidiDataset(midi_files=files, max_len=-1, description_flavor="description")
+    dataset = MidiDataset(midi_files=files, max_len=256, description_flavor="description")
     coll = SeqCollator(context_size=-1)
 
     g = torch.Generator()
@@ -33,7 +33,6 @@ def get_figaro_dataloader(config: DictConfig, model_cfg: DictConfig, dataset_cfg
         dataset,
         num_workers=config.dataloader_num_workers,
         batch_size=model_cfg.batch_size,
-        shuffle=True,
         generator=g,
         collate_fn=coll,
     )

@@ -4,7 +4,7 @@ cfg:
   path_to_images: out/images
   path_to_eval_results: out/results
   seed: 0
-  n_samples_eval: 200
+  n_samples_eval: 150000
   train_samples: 0
   valid_samples: 0
   run_id: 10k

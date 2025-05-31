@@ -2,6 +2,7 @@ from src.models.GeneralVARWrapper import GeneralVARWrapper
 import torch
 from torch import Tensor as T
 from figaro.models.seq2seq import Seq2SeqModule
+from figaro.constants import PAD_TOKEN
 from transformers.models.bert.modeling_bert import BertAttention
 
 
@@ -41,17 +42,29 @@ class FigaroWrapper(GeneralVARWrapper):
         """
         return batch["input_ids"]
 
-    def forward(self, batch: dict[str, T]) -> T:
+    def forward(self, batch: dict[str, T], is_cfg: bool = False) -> T:
         """
         Computes logits of all tokens, returns tensor of shape (batch_size, seq_len, vocab_size)
         """
-        return self.generator(
-            x=batch["input_ids"],
-            z=batch["description"],
-            bar_ids=batch["bar_ids"],
-            position_ids=batch["position_ids"],
-            description_bar_ids=batch["desc_bar_ids"],
-        )
+        if not is_cfg:
+            return self.generator(
+                x=batch["input_ids"],
+                z=batch["description"],
+                bar_ids=batch["bar_ids"],
+                position_ids=batch["position_ids"],
+                description_bar_ids=batch["desc_bar_ids"],
+            )
+        else:
+            self.generator.description_flavor = "none"
+            out = self.generator(
+                x=batch["input_ids"],
+                z=None,
+                bar_ids=batch["bar_ids"],
+                position_ids=batch["position_ids"],
+                description_bar_ids=None,
+            )
+            self.generator.description_flavor = "description"
+            return out
 
     @torch.no_grad()
     def get_token_list(self, images: T, *args, **kwargs) -> list[T]:
@@ -98,8 +111,11 @@ class FigaroWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     @torch.no_grad()
-    def get_loss_for_tokens(self, batch: dict[str, T]) -> T:
-        return self.generator.get_loss(batch)
+    def get_loss_for_tokens(self, preds: T, ground_truth: T) -> T:
+        preds = preds.permute(0, 2, 1)
+
+        loss_fn = torch.nn.CrossEntropyLoss(ignore_index=self.generator.vocab.to_i(PAD_TOKEN), reduction="none")
+        return loss_fn(preds, ground_truth)
 
     @torch.no_grad()
     def get_flops_forward_train(self) -> int:

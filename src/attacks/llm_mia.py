@@ -2,7 +2,7 @@ from src.attacks import FeatureExtractor
 from torch import Tensor as T
 from torch.nn import functional as F
 import torch
-from src.models import AudiocraftModelWrapper
+from src.models import AudiocraftModelWrapper, FigaroWrapper
 
 from typing import Tuple
 import zlib
@@ -180,6 +180,9 @@ class LLMMIAExtractor(FeatureExtractor):
         if self.attack_cfg.is_codebooks:
             return self.process_batch_codebooks(batch)
 
+        if isinstance(self.model, FigaroWrapper):
+            return self.process_batch_figaro(batch)
+
         images, classes = batch
         images = images.to(self.device)
         if type(classes) is T:
@@ -241,3 +244,19 @@ class LLMMIAExtractor(FeatureExtractor):
             results.append(codebook_features)
 
         return torch.concat(results, dim=2)
+
+    def process_batch_figaro(self, batch: dict[str, T]):
+        self.model: FigaroWrapper
+
+        device_batch = {key: value.to(self.device) for key, value in batch.items() if key != "files"}
+
+        tokens = self.model.tokenize(device_batch)
+        logits = self.model.forward(device_batch)
+
+        if self.attack_cfg.is_cfg:
+            logits_uncond = self.model.forward(device_batch, is_cfg=True)
+            logits = logits - logits_uncond
+
+        token_losses = self.model.get_loss_for_tokens(logits, tokens)
+
+        return self.compute_all(logits, tokens, token_losses)

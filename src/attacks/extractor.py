@@ -3,7 +3,7 @@ from torch import Tensor as T
 from typing import Tuple
 from tqdm import tqdm
 from src.attacks import DataSource
-from src.models import GeneralVARWrapper
+from src.models import GeneralVARWrapper, FigaroWrapper
 from src.dataloaders import loaders
 
 
@@ -20,7 +20,10 @@ class FeatureExtractor(DataSource):
         samples_processed = 0
         for batch in tqdm(loader, total=int(self.total_samples / self.model_cfg.batch_size + 1)):
             features.append(self.process_batch(batch, *args, **kwargs))
-            samples_processed += batch[0].shape[0]
+            if isinstance(self.model, FigaroWrapper):
+                samples_processed += batch["input_ids"].shape[0]
+            else:
+                samples_processed += batch[0].shape[0]
             if samples_processed >= self.total_samples:
                 break
         return torch.cat(features, dim=0)[: self.total_samples]
