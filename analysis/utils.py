@@ -24,6 +24,7 @@ ATTACKS = [
 ]
 
 ATTACKS_NAME_MAPPING = {
+    "llm_mia_codebooks": "LLM_MIA_CFG_CODEBOOKS",
     "llm_mia_cfg": "LLM_MIA_CFG",
     "llm_mia_loss": "LLM_MIA_CFG",
 }

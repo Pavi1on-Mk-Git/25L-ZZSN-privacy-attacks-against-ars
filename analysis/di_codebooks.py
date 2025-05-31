@@ -35,8 +35,7 @@ set_plt()
 N_PROC = 80
 
 MODELS = AUDIO_MODELS
-ATTACKS = ["llm_mia_cfg"]
-
+ATTACKS = ["llm_mia_codebooks"]
 
 PVALUES = [0.01, 0.05]
 NSAMPLES_TO_SHOW = [10, 100, 500, 1000, 5000, 10000]
@@ -47,6 +46,9 @@ PATH_TO_FEATURES = "out/features"
 PATH_TO_PLOTS = "analysis/plots/di"
 
 CAMIA_IDX_MAR = np.arange(7, 10)
+
+NUM_CODEBOOKS = 4
+USED_CODEBOOKS = [0, 1]
 
 
 def remove_features(features, SURP_IDX):
@@ -83,6 +85,16 @@ def preprocess_features(members: np.ndarray, nonmembers: np.ndarray) -> Tuple[np
     return members.sum(axis=1), nonmembers.sum(axis=1)
 
 
+def get_codebooks(features, codebooks):
+    result = []
+
+    for k in range(NUM_CODEBOOKS):
+        if k in codebooks:
+            result.append(features[:, :, 18 * k : 18 * (k + 1)])
+
+    return np.concat(result, axis=2)
+
+
 def get_scores():
     all_members, all_nonmembers = [], []
     for attack, model in product(ATTACKS, MODELS):
@@ -104,6 +116,9 @@ def get_scores():
 
         members = members["data"]
         nonmembers = nonmembers["data"]
+
+        members = get_codebooks(members, USED_CODEBOOKS)
+        nonmembers = get_codebooks(nonmembers, USED_CODEBOOKS)
 
         if model in ["mar_l", "mar_b", "mar_h"] and attack in ["di", "llm_mia_loss"] and REMOVE_CAMIA:
             members = remove_features(members, CAMIA_IDX_MAR)
