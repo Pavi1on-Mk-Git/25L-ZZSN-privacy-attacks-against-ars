@@ -87,22 +87,22 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         logits = logits[mask].unsqueeze(0)
         tokens = tokens[mask].unsqueeze(0)
 
-        result_tokens = []
-        result_logits = []
+        # result_tokens = []
+        # result_logits = []
 
-        for k in range(K):
-            logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # T, card
-            tokens_k = tokens[:, k, ...].contiguous().view(-1)  # T
-            mask_k = mask[:, k, ...].contiguous().view(-1)  # T
+        # for k in range(K):
+        #     logits_k = logits[:, k, ...].contiguous().view(-1, logits.size(-1))  # T, card
+        #     tokens_k = tokens[:, k, ...].contiguous().view(-1)  # T
+        #     mask_k = mask[:, k, ...].contiguous().view(-1)  # T
 
-            ce_logits = logits_k[mask_k]
-            ce_tokens = tokens_k[mask_k]
+        #     ce_logits = logits_k[mask_k]
+        #     ce_tokens = tokens_k[mask_k]
 
-            result_logits.append(ce_logits)
-            result_tokens.append(ce_tokens)
+        #     result_logits.append(ce_logits)
+        #     result_tokens.append(ce_tokens)
 
-        logits = torch.concat(result_logits, dim=0).unsqueeze(0)  # 1, seq_len, card
-        tokens = torch.concat(result_tokens, dim=0).unsqueeze(0)  # 1, seq_len
+        # logits = torch.concat(result_logits, dim=0).unsqueeze(0)  # 1, seq_len, card
+        # tokens = torch.concat(result_tokens, dim=0).unsqueeze(0)  # 1, seq_len
 
         return logits, tokens
 
