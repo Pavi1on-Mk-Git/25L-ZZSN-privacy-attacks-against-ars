@@ -3,13 +3,12 @@ from torch import Tensor as T
 import torch
 from typing import Tuple
 from typing import List
+from src.models import AudiocraftModelWrapper
 
 
 class MemInfoExtractor(FeatureExtractor):
     def get_token_probs(self, tokens: T, probas: T) -> T:
-        return torch.gather(probas, 2, tokens.unsqueeze(2).long()).permute(
-            0, 2, 1
-        )  # B, 1, N_tokens
+        return torch.gather(probas, 2, tokens.unsqueeze(2).long()).permute(0, 2, 1)  # B, 1, N_tokens
 
     def get_token_ranks(self, tokens: T, probas: T) -> T:
         top_k_indices = torch.topk(probas, probas.shape[2], dim=2).indices
@@ -32,6 +31,11 @@ class MemInfoExtractor(FeatureExtractor):
 
         tokens = self.model.tokenize(images)
         logits = self.model.forward(images, classes, is_cfg=False)
+
+        if isinstance(self.model, AudiocraftModelWrapper):
+            logits, mask = logits
+            logits, tokens = self.model.get_only_first_codebook(logits, tokens, mask)
+
         probs = torch.nn.functional.softmax(logits, dim=-1)
 
         token_probs = self.get_token_probs(tokens, probs)
@@ -44,8 +48,6 @@ class MemInfoExtractor(FeatureExtractor):
             dim=1,
         )  # B, N_features, N_tokens
 
-        features = torch.cat(
-            [features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2
-        )
+        features = torch.cat([features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
         # print(features.shape)
         return features.cpu()
