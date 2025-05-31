@@ -3,4 +3,4 @@ name: figaro
 expert_ckpt: /net/pr2/projects/plgrid/plggzzsn2025/figaro_checkpoints/figaro-expert.ckpt
 
 dataloader: figaro
-batch_size: 4
+batch_size: 1024

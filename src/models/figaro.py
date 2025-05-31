@@ -6,34 +6,40 @@ from figaro.constants import PAD_TOKEN
 from transformers.models.bert.modeling_bert import BertAttention
 
 
+def load_from_checkpoint(model_type, checkpoint):
+    # assuming transformers>=4.36.0
+    pl_ckpt = torch.load(checkpoint, weights_only=False, map_location="cpu")
+    kwargs = pl_ckpt["hyper_parameters"]
+    if "flavor" in kwargs:
+        del kwargs["flavor"]
+    if "vae_run" in kwargs:
+        del kwargs["vae_run"]
+    model = model_type(**kwargs)
+    state_dict = pl_ckpt["state_dict"]
+    # position_ids are no longer saved in the state_dict starting with transformers==4.31.0
+    state_dict = {k: v for k, v in state_dict.items() if not k.endswith("embeddings.position_ids")}
+    try:
+        # succeeds for checkpoints trained with transformers>4.13.0
+        model.load_state_dict(state_dict)
+    except RuntimeError:
+        # work around a breaking change introduced in transformers==4.13.0, which fixed the position_embedding_type of cross-attention modules "absolute"
+        config = model.transformer.decoder.bert.config
+        for layer in model.transformer.decoder.bert.encoder.layer:
+            layer.crossattention = BertAttention(config, position_embedding_type=config.position_embedding_type)
+        model.load_state_dict(state_dict)
+    model.freeze()
+    model.eval()
+    return model
+
+
 class FigaroWrapper(GeneralVARWrapper):
 
     def load_models(self):
         """
         Loads the generator and tokenizer models
         """
-        # assuming transformers>=4.36.0
-        pl_ckpt = torch.load(self.model_cfg.expert_ckpt, weights_only=False, map_location="cpu")
-        kwargs = pl_ckpt["hyper_parameters"]
-        if "flavor" in kwargs:
-            del kwargs["flavor"]
-        if "vae_run" in kwargs:
-            del kwargs["vae_run"]
-        model = Seq2SeqModule(**kwargs)
-        state_dict = pl_ckpt["state_dict"]
-        # position_ids are no longer saved in the state_dict starting with transformers==4.31.0
-        state_dict = {k: v for k, v in state_dict.items() if not k.endswith("embeddings.position_ids")}
-        try:
-            # succeeds for checkpoints trained with transformers>4.13.0
-            model.load_state_dict(state_dict)
-        except RuntimeError:
-            # work around a breaking change introduced in transformers==4.13.0, which fixed the position_embedding_type of cross-attention modules "absolute"
-            config = model.transformer.decoder.bert.config
-            for layer in model.transformer.decoder.bert.encoder.layer:
-                layer.crossattention = BertAttention(config, position_embedding_type=config.position_embedding_type)
-            model.load_state_dict(state_dict)
-        model.freeze()
-        model.eval()
+        model = load_from_checkpoint(Seq2SeqModule, self.model_cfg.expert_ckpt)
+
         return model, None
 
     def tokenize(self, batch: dict[str, T]) -> T:
