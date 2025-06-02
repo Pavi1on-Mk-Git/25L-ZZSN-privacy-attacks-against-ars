@@ -13,6 +13,7 @@ class FeatureExtractor(DataSource):
 
     def process_batch(self, batch: Tuple[T, T], *args, **kwargs) -> T: ...
 
+    @staticmethod
     def _is_all_same_length(features: list[T]) -> tuple[bool, int]:
         result = True
 
@@ -28,7 +29,8 @@ class FeatureExtractor(DataSource):
 
         return result, max_length
 
-    def _pad_with_nans(self, features: list[T], max_length: int) -> list[T]:
+    @staticmethod
+    def _pad_with_nans(features: list[T], max_length: int) -> list[T]:
         result = []
 
         B, _, F = features[0].shape
