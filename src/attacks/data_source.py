@@ -50,14 +50,16 @@ class DataSource:
     @property
     def path_out(self) -> str:
         path = (
-            self.config.path_to_scores
-            if self.action_cfg.name == "scores_computation"
-            else self.config.path_to_features
+            self.config.path_to_scores if self.action_cfg.name == "scores_computation" else self.config.path_to_features
         )
         return os.path.join(
             path,
             f"{self.filename}.npz",
         )
+
+    @property
+    def captions_path_out(self) -> str:
+        return self.path_out.replace(".npz", "_conditions.json")
 
     @property
     def path_in(self) -> str:
@@ -99,15 +101,11 @@ class DataSource:
             if key == "device":
                 continue
             if key in self.metadata and self.metadata[key] != value:
-                raise ValueError(
-                    f"Metadata mismatch: {key} {value} != {self.metadata[key]}"
-                )
+                raise ValueError(f"Metadata mismatch: {key} {value} != {self.metadata[key]}")
             if key not in self.metadata:
                 raise ValueError(f"Metadata mismatch: {key} not in metadata")
 
-    def load(
-        self, directory: str, override_filename: Optional[str] = None
-    ) -> Tuple[T, dict]:
+    def load(self, directory: str, override_filename: Optional[str] = None) -> Tuple[T, dict]:
         """
         Load the data
         """

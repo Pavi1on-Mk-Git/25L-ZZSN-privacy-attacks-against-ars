@@ -5,6 +5,7 @@ from tqdm import tqdm
 from src.attacks import DataSource
 from src.models import GeneralVARWrapper, FigaroWrapper
 from src.dataloaders import loaders
+import os.path
 
 
 class FeatureExtractor(DataSource):
@@ -76,6 +77,9 @@ class FeatureExtractor(DataSource):
         """
         Run the feature extractor
         """
+        if os.path.isfile(self.captions_path_out):
+            os.remove(self.captions_path_out)
+
         # 1. Collect features for members and nonmembers
         features = self.process_data(*args, **kwargs)
         # 2. Run assertions
