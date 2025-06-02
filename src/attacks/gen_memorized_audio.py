@@ -45,25 +45,35 @@ class GenerateCandidatesAudio(FeatureExtractor):
             target_tokens, sample_caption, sample_index = self.model.get_target_label_memorization(
                 members_features, scores, captions, top_k
             )
-            assert target_tokens.shape == (1, K, 256)
+            assert target_tokens.shape == (1, K, T)
             assert sample_index.shape == (1,)
 
             ins.append((target_tokens, sample_caption, sample_index))
 
         out = []
+        sample_indexes = []
         for target_tokens, sample_caption, sample_index in tqdm(ins, desc="Generating Samples"):
             pred = []
             for top_tokens in TOP_TOKENS:
                 pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
-                pred_tokens = torch.cat([pred_tokens, sample_index.unsqueeze(1)], dim=1)
+
                 pred.append(pred_tokens)
+                sample_indexes.append(sample_index.item())
 
             pred = torch.stack(pred, dim=1)
-            out.append(torch.cat([pred, target_tokens], dim=1).cpu())
+            out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
             f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
-            f"memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
+            f"memorized_audiocaps_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
             data=out,
         )
+
+        captions_filename = (
+            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
+            + f"memorized_audiocaps_{self.dataset_cfg.split}_{self.attack_cfg.std}_indexes.json"
+        )
+
+        with open(captions_filename, "w") as fh:
+            json.dump(sample_indexes, fh)

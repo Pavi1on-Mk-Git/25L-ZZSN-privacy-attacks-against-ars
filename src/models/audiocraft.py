@@ -176,6 +176,8 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
                 check=True,
             )
 
+        assert generated.shape == target_tokens.shape
+
         return generated
 
     @torch.no_grad()
@@ -188,7 +190,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         mem_samples_indices = torch.topk(scores, len(scores)).indices
         sample_index = mem_samples_indices[k]
 
-        target_tokens = members_features[sample_index, [0], :, :256].to(self.model_cfg.device).long()
+        target_tokens = members_features[sample_index, [0], :, :].to(self.model_cfg.device).long()
 
         return (
             target_tokens,
