@@ -49,8 +49,13 @@ class MemInfoExtractor(FeatureExtractor):
 
         # features = torch.cat([features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
 
-        with open(self.path_out.replace(".npz", "_conditions.json"), "w") as fp:
-            json.dump(conditions, fp)
+        with open(self.path_out.replace(".npz", "_conditions.json"), "w+") as fp:
+            old_conditions = json.load(fp)
+            fp.seek(0)
+            fp.truncate(0)
+
+            old_conditions.extend(conditions)
+            json.dump(old_conditions, fp)
 
         # print(features.shape)
         return features.cpu()
