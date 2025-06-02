@@ -138,7 +138,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
-        raise NotImplementedError
+        return members_features[:, ft_idx, :, -100:-1].mean(dim=1).mean(dim=1)
 
     @torch.no_grad()
     def get_loss_per_token(self, audios: T, conditioning: T, *args, **kwargs) -> T:
@@ -166,17 +166,41 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     @torch.no_grad()
-    def generate_single_memorization(self, top: int, target_token_list: list[T], label: T, std: float) -> T:
-        raise NotImplementedError
+    def generate_single_memorization(self, top: int, target_tokens: T, caption: str) -> T:
+        B, K, T = target_tokens.shape[0]
+        assert B == 1
+
+        prompt = target_tokens[:, :, :top]
+        condition = [ConditioningAttributes(text={"description": caption})]
+
+        generated = self.generator.generate(
+            prompt=prompt,
+            conditions=condition,
+            max_gen_len=1024,
+            use_sampling=False,
+            temp=0.0,
+            check=True,
+        )
+
+        return generated
 
     @torch.no_grad()
     def tokens_to_img(self, tokens: T, *args, **kwargs) -> T:
         raise NotImplementedError
 
     def get_target_label_memorization(
-        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
-    ) -> tuple[T, T, T]:
-        raise NotImplementedError
+        self, members_features: T, scores: T, captions: list[str], k: int
+    ) -> tuple[T, str, T]:
+        mem_samples_indices = torch.topk(scores, len(scores)).indices
+        sample_index = mem_samples_indices[k]
+
+        target_tokens = members_features[sample_index, [0], :, :256].to(self.model_cfg.device).long()
+
+        return (
+            target_tokens,
+            captions[sample_index],
+            sample_index.unsqueeze(0).to(self.model_cfg.device),
+        )
 
     @torch.no_grad()
     def get_loss_for_tokens(self, preds: T, ground_truth: T) -> T:

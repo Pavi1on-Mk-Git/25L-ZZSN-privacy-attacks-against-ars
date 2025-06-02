@@ -1,0 +1,72 @@
+from src.attacks import FeatureExtractor
+from src.models import AudiocraftModelWrapper
+from torch import Tensor as T
+import torch
+
+from tqdm import tqdm
+
+import numpy as np
+import json
+
+
+class GenerateCandidatesAudio(FeatureExtractor):
+    top_tokens = {
+        "audiocraft_medium": [0, 1, 5, 14, 30],
+    }
+
+    def get_data(self, split: str) -> tuple[np.ndarray, list[str]]:
+        assert split == "train"
+        features_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_train.npz"
+        captions_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_train_conditions.json"
+
+        features = np.load(features_filename, allow_pickle=True)
+        with open(captions_filename, "r") as fh:
+            captions = json.load(fh)
+
+        return features, captions
+
+    @torch.no_grad()
+    def run(self, *args, **kwargs) -> T:
+        self.model: AudiocraftModelWrapper
+
+        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
+        members_features, captions = self.get_data(self.dataset_cfg.split)
+        members_features = torch.from_numpy(members_features)  # B, F, T
+        B, F, K, T = members_features.shape
+        print("Data loaded")
+
+        torch.manual_seed(0)
+        scores = self.model.get_memorization_scores(members_features, 1)  # B
+        assert scores.shape == (B,)
+
+        ins = []
+
+        for top_k in tqdm(self.attack_cfg.n_samples, desc="Getting Samples"):
+            target_tokens, sample_caption, sample_index = self.model.get_target_label_memorization(
+                members_features, scores, captions, top_k
+            )
+            assert target_tokens.shape == (1, K, 256)
+            assert sample_index == (1,)
+
+            ins.append((target_tokens, sample_caption, sample_index))
+
+        out = []
+        for target_tokens, sample_caption, sample_index in tqdm(ins, desc="Generating Samples"):
+            pred = []
+            for top_tokens in TOP_TOKENS:
+                pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
+                pred_tokens = torch.cat([pred_tokens, sample_caption.unsqueeze(1), sample_index.unsqueeze(1)], dim=1)
+                pred.append(pred_tokens)
+
+            pred = torch.stack(pred, dim=1)
+            target = torch.cat(
+                [target_tokens, sample_caption.unsqueeze(1), sample_index.unsqueeze(1)], dim=1
+            ).unsqueeze(1)
+            out.append(torch.cat([pred, target], dim=1).cpu())
+
+        out = torch.cat(out, dim=0).cpu().numpy()
+        np.savez(
+            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
+            f"memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
+            data=out,
+        )
