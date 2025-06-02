@@ -7,6 +7,7 @@ from itertools import product
 
 import numpy as np
 
+
 class GenerateCandidates(FeatureExtractor):
     top_tokens = {
         "var_30": list(range(5)),
@@ -28,13 +29,15 @@ class GenerateCandidates(FeatureExtractor):
         for run_id in tqdm(RUN_IDS):
             try:
                 data = np.load(
-                    f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz",
+                    f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
+                    f"{run_id}_imagenet_{split}.npz",
                     allow_pickle=True,
                 )
                 out.append(data["data"])
             except FileNotFoundError:
                 print(
-                    f"File not found: {self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz"
+                    f"File not found: {self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
+                    f"{run_id}_imagenet_{split}.npz"
                 )
         return np.concatenate(out, axis=0)
 
@@ -54,9 +57,7 @@ class GenerateCandidates(FeatureExtractor):
         sample_classes = members_features[:, 0, -1].clone()
         ins = []
 
-        for cls, top_k in tqdm(
-            product(classes, self.TOP_CLASS_SAMPLES), desc="Getting Samples"
-        ):
+        for cls, top_k in tqdm(product(classes, self.TOP_CLASS_SAMPLES), desc="Getting Samples"):
             target_tokens, label_B, s_idx = self.model.get_target_label_memorization(
                 members_features, scores, sample_classes, cls, top_k
             )
@@ -77,19 +78,16 @@ class GenerateCandidates(FeatureExtractor):
                     label_B,
                     self.attack_cfg.std,
                 )
-                pred_tokens = torch.cat(
-                    [pred_tokens, label_B.unsqueeze(1), s_idx.unsqueeze(1)], dim=1
-                )
+                pred_tokens = torch.cat([pred_tokens, label_B.unsqueeze(1), s_idx.unsqueeze(1)], dim=1)
                 pred.append(pred_tokens)
 
             pred = torch.stack(pred, dim=1)
-            target = torch.cat(
-                [target_tokens, label_B.unsqueeze(1), s_idx.unsqueeze(1)], dim=1
-            ).unsqueeze(1)
+            target = torch.cat([target_tokens, label_B.unsqueeze(1), s_idx.unsqueeze(1)], dim=1).unsqueeze(1)
             out.append(torch.cat([pred, target], dim=1).cpu())
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
-            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
+            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
+            f"memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
             data=out,
         )
