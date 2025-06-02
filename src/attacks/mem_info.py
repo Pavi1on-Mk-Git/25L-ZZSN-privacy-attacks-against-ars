@@ -2,8 +2,8 @@ from src.attacks import FeatureExtractor
 from torch import Tensor as T
 import torch
 from typing import Tuple
-from typing import List
 from src.models import AudiocraftModelWrapper
+import json
 
 
 class MemInfoExtractor(FeatureExtractor):
@@ -23,14 +23,13 @@ class MemInfoExtractor(FeatureExtractor):
         """
         TODO: create docstring
         """
-        images, classes = batch
-        B = images.shape[0]
+        images, conditions = batch
         images = images.to(self.device)
-        if type(classes) == T:
-            classes = classes.to(self.device).long()
+        if type(conditions) is T:
+            conditions = conditions.to(self.device).long()
 
         tokens = self.model.tokenize(images)
-        logits = self.model.forward(images, classes, is_cfg=False)
+        logits = self.model.forward(images, conditions, is_cfg=False)
 
         if isinstance(self.model, AudiocraftModelWrapper):
             logits, mask = logits
@@ -48,6 +47,10 @@ class MemInfoExtractor(FeatureExtractor):
             dim=1,
         )  # B, N_features, N_tokens
 
-        features = torch.cat([features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
+        # features = torch.cat([features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
+
+        with open(self.path_out.replace(".npz", "_conditions.json"), "w") as fp:
+            json.dump(conditions, fp)
+
         # print(features.shape)
         return features.cpu()
