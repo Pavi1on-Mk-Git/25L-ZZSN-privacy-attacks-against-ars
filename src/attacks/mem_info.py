@@ -25,6 +25,7 @@ class MemInfoExtractor(FeatureExtractor):
         TODO: create docstring
         """
         images, conditions = batch
+        B = images.shape[0]
         images = images.to(self.device)
         if type(conditions) is T:
             conditions = conditions.to(self.device).long()
@@ -48,17 +49,18 @@ class MemInfoExtractor(FeatureExtractor):
             dim=1,
         )  # B, N_features, N_tokens
 
-        # features = torch.cat([features, classes.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
+        if isinstance(self.model, AudiocraftModelWrapper):
+            if os.path.isfile(self.captions_path_out):
+                with open(self.captions_path_out, "r") as fp:
+                    all_conditions = json.load(fp)
+            else:
+                all_conditions = []
 
-        if os.path.isfile(self.captions_path_out):
-            with open(self.captions_path_out, "r") as fp:
-                all_conditions = json.load(fp)
+            all_conditions.extend(conditions)
+
+            with open(self.captions_path_out, "w") as fp:
+                json.dump(all_conditions, fp)
         else:
-            all_conditions = []
-
-        all_conditions.extend(conditions)
-
-        with open(self.captions_path_out, "w") as fp:
-            json.dump(all_conditions, fp)
+            features = torch.cat([features, conditions.reshape(B, 1, 1).repeat(1, features.shape[1], 1)], dim=2)
 
         return features.cpu()
