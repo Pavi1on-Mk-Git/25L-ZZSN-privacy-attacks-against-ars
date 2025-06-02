@@ -61,5 +61,5 @@ class MemInfoExtractor(FeatureExtractor):
             old_conditions.extend(conditions)
             json.dump(old_conditions, fp)
 
-        # print(features.shape)
+        print(f"{features.shape=}")
         return features.cpu()
