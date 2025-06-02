@@ -9,7 +9,7 @@ import os.path
 
 class MemInfoExtractor(FeatureExtractor):
     def get_token_probs(self, tokens: T, probas: T) -> T:
-        if len(tokens.shape) == 3:
+        if len(probas.shape) == 3:
             return torch.gather(probas, 2, tokens.unsqueeze(2).long()).permute(0, 2, 1)  # B, 1, N_tokens
         else:
             return torch.gather(probas, -1, tokens.unsqueeze(-1).long()).permute(0, 3, 1, 2)  # B, 1, K, T
@@ -27,9 +27,6 @@ class MemInfoExtractor(FeatureExtractor):
             return loss_fn(probas.permute(0, 3, 1, 2), tokens).unsqueeze(1)  # B, 1, K, T
 
     def process_batch(self, batch: Tuple[T, T]) -> T:
-        """
-        TODO: create docstring
-        """
         images, conditions = batch
         B = images.shape[0]
         images = images.to(self.device)

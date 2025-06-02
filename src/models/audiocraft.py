@@ -145,13 +145,6 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         """
         Computes the loss per token, returns tensor of shape (batch_size, seq_len)
         """
-        tokens = self.tokenize(audios)
-        logits, mask = self._forward_with_mask(audios, conditioning)
-
-        MusicGenSolver._compute_cross_entropy(None, logits, tokens, mask)
-
-        # loss_fn = torch.nn.CrossEntropyLoss(reduction="none")
-        # return loss_fn(logits.permute(0, 2, 1), tokens)  # B, N_tokens
         raise NotImplementedError
 
     @torch.no_grad()
@@ -167,20 +160,21 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
     @torch.no_grad()
     def generate_single_memorization(self, top: int, target_tokens: T, caption: str) -> T:
-        B, K, T = target_tokens.shape[0]
+        B, K, T = target_tokens.shape
         assert B == 1
 
         prompt = target_tokens[:, :, :top]
         condition = [ConditioningAttributes(text={"description": caption})]
 
-        generated = self.generator.generate(
-            prompt=prompt,
-            conditions=condition,
-            max_gen_len=1024,
-            use_sampling=False,
-            temp=0.0,
-            check=True,
-        )
+        with self.autocast:
+            generated = self.generator.generate(
+                prompt=prompt,
+                conditions=condition,
+                max_gen_len=T,
+                use_sampling=False,
+                temp=0.0,
+                check=True,
+            )
 
         return generated
 

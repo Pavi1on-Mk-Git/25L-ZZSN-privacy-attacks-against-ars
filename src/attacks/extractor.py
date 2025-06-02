@@ -15,17 +15,20 @@ class FeatureExtractor(DataSource):
 
     @staticmethod
     def _is_all_same_length(features: list[T]) -> tuple[bool, int]:
+        if len(features[0].shape) < 4:
+            return True, None
+
         result = True
 
-        B, F, T = features[0].shape
+        B, F, K, T = features[0].shape
         max_length = T
         for batch in features:
-            assert len(batch.shape) == 3
-            assert (batch.shape[0], batch.shape[1]) == (B, F)
-            if batch.shape[2] != T:
+            assert len(batch.shape) == 4
+            assert (batch.shape[0], batch.shape[1], batch.shape[2]) == (B, F, K)
+            if batch.shape[-1] != T:
                 result = False
-            if batch.shape[2] > max_length:
-                max_length = batch.shape[2]
+            if batch.shape[-1] > max_length:
+                max_length = batch.shape[-1]
 
         return result, max_length
 
@@ -33,16 +36,16 @@ class FeatureExtractor(DataSource):
     def _pad_with_nans(features: list[T], max_length: int) -> list[T]:
         result = []
 
-        B, F, _ = features[0].shape
+        B, F, K, _ = features[0].shape
         for batch in features:
             if batch.shape[2] == max_length:
                 continue
 
             padding = (
-                torch.ones((B, F, max_length - batch.shape[2]), dtype=batch.dtype, device=batch.device) * torch.nan
+                torch.ones((B, F, K, max_length - batch.shape[-1]), dtype=batch.dtype, device=batch.device) * torch.nan
             )
-            batch = torch.concat([batch, padding], dim=2)
-            assert batch.shape == (B, F, max_length)
+            batch = torch.concat([batch, padding], dim=-1)
+            assert batch.shape == (B, F, K, max_length)
             result.append(batch)
 
         return result
