@@ -38,7 +38,8 @@ class FigaroWrapper(GeneralVARWrapper):
         """
         Loads the generator and tokenizer models
         """
-        model = load_from_checkpoint(Seq2SeqModule, self.model_cfg.expert_ckpt)
+        model = load_from_checkpoint(Seq2SeqModule, self.model_cfg.latent_ckpt)
+        model.to(self.model_cfg.device)
 
         return model, None
 
@@ -55,10 +56,10 @@ class FigaroWrapper(GeneralVARWrapper):
         if not is_cfg:
             return self.generator(
                 x=batch["input_ids"],
-                z=batch["description"],
+                z=batch["latents"],
                 bar_ids=batch["bar_ids"],
                 position_ids=batch["position_ids"],
-                description_bar_ids=batch["desc_bar_ids"],
+                description_bar_ids=None,
             )
         else:
             self.generator.description_flavor = "none"
@@ -69,7 +70,7 @@ class FigaroWrapper(GeneralVARWrapper):
                 position_ids=batch["position_ids"],
                 description_bar_ids=None,
             )
-            self.generator.description_flavor = "description"
+            self.generator.description_flavor = "latent"
             return out
 
     @torch.no_grad()

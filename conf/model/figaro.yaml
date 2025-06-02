@@ -1,6 +1,9 @@
 name: figaro
 
 expert_ckpt: /net/pr2/projects/plgrid/plggzzsn2025/figaro_checkpoints/figaro-expert.ckpt
+latent_ckpt: /net/pr2/projects/plgrid/plggzzsn2025/figaro_checkpoints/figaro-learned.ckpt
+both_ckpt: /net/pr2/projects/plgrid/plggzzsn2025/figaro_checkpoints/figaro.ckpt
+vae_ckpt: /net/pr2/projects/plgrid/plggzzsn2025/figaro_checkpoints/vq-vae.ckpt
 
 dataloader: figaro
 batch_size: 1024
