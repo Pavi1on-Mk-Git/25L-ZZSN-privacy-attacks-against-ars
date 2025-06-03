@@ -13,6 +13,8 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag
 import string
+import json
+import os.path
 
 nltk.download("stopwords")
 nltk.download("punkt_tab")
@@ -55,6 +57,9 @@ class AudioDataset(Dataset):
             caption = self.descriptions[caption_idx]
             if "speech" not in caption and "speak" not in caption:
                 self.filenames.append(filename)
+
+        with open(os.path.abspath(f"{audio_dir}/../{dataset_cfg.split}_filenames.json"), "w") as fh:
+            json.dump(filenames, fh)
 
         self.collate_fn = collate_fn
 

@@ -70,10 +70,10 @@ class GenerateCandidatesAudio(FeatureExtractor):
             data=out,
         )
 
-        captions_filename = (
+        indices_filename = (
             f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
             + f"memorized_audiocaps_{self.dataset_cfg.split}_{self.attack_cfg.std}_indexes.json"
         )
 
-        with open(captions_filename, "w") as fh:
+        with open(indices_filename, "w") as fh:
             json.dump(sample_indexes, fh)
