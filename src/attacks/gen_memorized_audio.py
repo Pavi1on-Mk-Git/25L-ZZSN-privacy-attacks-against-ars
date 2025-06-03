@@ -65,14 +65,14 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
-            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
-            f"memorized_audiocaps_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
+            f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
+            f"memorized_audiocaps_{self.dataset_cfg.split}.npz",
             data=out,
         )
 
         indices_filename = (
-            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_"
-            + f"memorized_audiocaps_{self.dataset_cfg.split}_{self.attack_cfg.std}_indexes.json"
+            f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
+            + f"memorized_audiocaps_{self.dataset_cfg.split}_indexes.json"
         )
 
         with open(indices_filename, "w") as fh:

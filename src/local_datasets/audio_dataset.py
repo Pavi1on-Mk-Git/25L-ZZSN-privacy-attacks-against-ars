@@ -14,7 +14,6 @@ from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag
 import string
 import json
-import os.path
 
 nltk.download("stopwords")
 nltk.download("punkt_tab")
