@@ -62,6 +62,18 @@ class DataSource:
         return self.path_out.replace(".npz", "_conditions.json")
 
     @property
+    def latents_path_out(self) -> str:
+        return self.path_out.replace(".npz", "_latents.npy")
+
+    @property
+    def bar_ids_path_out(self) -> str:
+        return self.path_out.replace(".npz", "_bar_ids.npy")
+
+    @property
+    def position_ids_path_out(self) -> str:
+        return self.path_out.replace(".npz", "_position_ids.npy")
+
+    @property
     def path_in(self) -> str:
         assert self.action_cfg.name != "features_extraction"
         return os.path.join(

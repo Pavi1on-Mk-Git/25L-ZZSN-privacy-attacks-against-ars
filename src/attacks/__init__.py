@@ -7,6 +7,7 @@ from src.attacks.mem_info import MemInfoExtractor
 from src.attacks.mem_info_mar import MemInfoMARExtractor
 from src.attacks.gen_memorized import GenerateCandidates
 from src.attacks.gen_memorized_audio import GenerateCandidatesAudio
+from src.attacks.gen_memorized_figaro import GenerateCandidatesFigaro
 from src.attacks.find_memorized import ExtractMemorized
 from src.attacks.llm_mia_loss import (
     LLMMIALossExtractor,
@@ -32,6 +33,7 @@ feature_extractors: Dict[str, FeatureExtractor] = {
     "llm_mia": LLMMIAExtractor,
     "gen_memorized": GenerateCandidates,
     "gen_memorized_audio": GenerateCandidatesAudio,
+    "gen_memorized_figaro": GenerateCandidatesFigaro,
     "find_memorized": ExtractMemorized,
     "llm_mia_cfg": LLMMIACFGExtractor,
     "llm_mia_codebooks": LLMMIACFGExtractor,

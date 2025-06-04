@@ -84,7 +84,7 @@ class FigaroWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
-        raise NotImplementedError
+        return members_features[:, ft_idx, -100:-1].mean(dim=1)
 
     @torch.no_grad()
     def get_loss_per_token(self, images: T, classes: T, *args, **kwargs) -> T:
@@ -105,17 +105,51 @@ class FigaroWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     @torch.no_grad()
-    def generate_single_memorization(self, top: int, target_token_list: list[T], label: T, std: float) -> T:
-        raise NotImplementedError
+    def generate_single_memorization(
+        self, top: int, target_tokens: T, target_bar_ids: T, target_position_ids: T, latent: T
+    ) -> T:
+        B, T = target_tokens.shape
+        assert B == 1
+
+        batch = {
+            "input_ids": target_tokens[:, :top],
+            "bar_ids": target_bar_ids[:, :top],
+            "position_ids": target_position_ids[:, :top],
+            "latents": latent,
+        }
+
+        generated = self.generator.sample(batch=batch, max_length=T - 1, temp=0.0)
+
+        assert generated["sequences"].shape == target_tokens.shape
+
+        return generated["sequences"]
 
     @torch.no_grad()
     def tokens_to_img(self, tokens: T, *args, **kwargs) -> T:
         raise NotImplementedError
 
     def get_target_label_memorization(
-        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
-    ) -> tuple[T, T, T]:
-        raise NotImplementedError
+        self, members_features: T, scores: T, latents: T, bar_ids: T, position_ids: T, k: int
+    ) -> tuple[T, T, T, T, T]:
+        mem_samples_indices = torch.topk(scores, len(scores)).indices
+        sample_index = mem_samples_indices[k]
+
+        target_tokens = members_features[sample_index, [0], :].to(self.model_cfg.device).long()
+
+        nan_index = torch.argmax(torch.any(latents[sample_index], dim=1).int())
+
+        if nan_index != 0:
+            target_latents = latents[[sample_index], :nan_index, :]
+        else:
+            target_latents = latents[[sample_index], :, :]
+
+        return (
+            target_tokens,
+            bar_ids[[sample_index], :].to(self.model_cfg.device).long(),
+            position_ids[[sample_index], :].to(self.model_cfg.device).long(),
+            target_latents.to(self.model_cfg.device),
+            sample_index.unsqueeze(0).to(self.model_cfg.device),
+        )
 
     @torch.no_grad()
     def get_loss_for_tokens(self, preds: T, ground_truth: T) -> T:

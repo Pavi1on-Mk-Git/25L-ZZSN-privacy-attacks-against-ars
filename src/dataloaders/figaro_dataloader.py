@@ -56,7 +56,7 @@ def get_figaro_dataloader(config: DictConfig, model_cfg: DictConfig, dataset_cfg
         midi_files=files,
         max_len=256,
         max_bars=256,
-        description_flavor="both",
+        description_flavor="latent",
         vae_module=model,
         device=model_cfg.device,
     )
