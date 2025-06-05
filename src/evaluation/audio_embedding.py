@@ -24,7 +24,7 @@ class AudioEmbeddingModel:
         embd_lst = []
 
         for audio in x:
-            audio = audio.squeeze(0).numpy()
+            audio = audio.squeeze(0).cpu().numpy()
             embd = self.model.forward(audio, SAMPLE_RATE)
             embd = embd.cpu()
 
