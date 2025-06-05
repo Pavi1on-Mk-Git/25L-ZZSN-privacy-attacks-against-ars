@@ -13,7 +13,7 @@ from torchmetrics.functional import pairwise_cosine_similarity
 import json
 
 from audiocraft.data.audio import audio_write
-import os
+from pathlib import Path
 
 
 class ExtractMemorizedAudio(FeatureExtractor):
@@ -52,8 +52,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
-        os.mkdir("analysis/plots/memorization")
-        os.mkdir("generated_samples")
+        Path("analysis/plots/memorization").mkdir(parents=True, exist_ok=True)
+        Path("generated_samples").mkdir(parents=True, exist_ok=True)
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
