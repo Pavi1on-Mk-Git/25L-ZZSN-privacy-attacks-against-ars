@@ -64,7 +64,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
         samples_dir.mkdir(parents=True)
 
         with open(
-            f"out/features/{self.model_cfg.name}_mem_info_audiocaps_10k_{self.dataset_cfg.split}_conditions.json"
+            f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_{self.dataset_cfg.split}_conditions.json"
         ) as fh:
             captions = json.load(fh)
 
