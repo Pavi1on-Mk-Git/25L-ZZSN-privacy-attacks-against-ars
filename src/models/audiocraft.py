@@ -171,8 +171,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
                 prompt=prompt,
                 conditions=condition,
                 max_gen_len=T,
-                use_sampling=True,
-                temp=0.000001,
+                use_sampling=False,
                 check=True,
             )
 
