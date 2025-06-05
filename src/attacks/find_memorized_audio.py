@@ -52,6 +52,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
         )["data"]
 
         data = torch.from_numpy(data)
+        print(f"{data.shape=}")
         data = data.reshape(data.shape[0], 2, -1)
         print(f"{data.shape=}")
         pred, target = data[:, 0], data[:, 1]
