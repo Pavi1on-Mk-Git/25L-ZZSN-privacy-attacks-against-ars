@@ -1,5 +1,6 @@
 from src.attacks import FeatureExtractor
 from src.models.audiocraft import AudiocraftModelWrapper
+from src.evaluation.audio_embedding import AudioEmbeddingModel
 from torch import Tensor as T
 import torch
 
@@ -67,6 +68,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
     def run(self, *args, **kwargs) -> None:
         self.model: AudiocraftModelWrapper
+        self.embedding_model = AudioEmbeddingModel()
 
         preds, targets, sample_indices = self.load_candidates()
         device = self.model_cfg.device
@@ -85,6 +87,12 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
             print(f"{pred_audios.shape=}")
             print(f"{target_audio.shape=}")
+
+            pred_features = self.embedding_model.get_embeddings(pred_audios)
+            target_features = self.embedding_model.get_embeddings(target_audio)
+
+            print(f"{pred_features.shape=}")
+            print(f"{target_features.shape=}")
 
             return
 
