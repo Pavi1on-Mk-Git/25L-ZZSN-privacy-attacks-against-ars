@@ -56,14 +56,19 @@ class GenerateCandidatesAudio(FeatureExtractor):
             pred = []
             for top_tokens in TOP_TOKENS:
                 pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
+                print(f"{pred_tokens.shape=}")
 
                 pred.append(pred_tokens)
                 sample_indexes.append(sample_index.item())
 
             pred = torch.stack(pred, dim=1)
+            print(f"{pred.shape=}")
+            print(f"{target_tokens.unsqueeze(1).shape=}")
+            print(f"{torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).shape=}")
             out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
 
         out = torch.cat(out, dim=0).cpu().numpy()
+        print(f"{out.shape=}")
         np.savez(
             f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
             f"memorized_audiocaps_{self.dataset_cfg.split}.npz",
