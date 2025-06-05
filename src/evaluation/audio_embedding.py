@@ -33,4 +33,4 @@ class AudioEmbeddingModel:
 
             embd_lst.append(embd)
 
-        return np.stack(embd_lst, axis=0).reshape((len(embd_lst), -1))
+        return torch.tensor(np.stack(embd_lst, axis=0).reshape((len(embd_lst), -1)))
