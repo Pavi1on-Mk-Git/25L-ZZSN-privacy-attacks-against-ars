@@ -81,7 +81,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
             target = target.to(device)
 
             pred_audios = self.model.tokens_to_audio(pred)
-            target_audio = self.model.tokens_to_audio(target)
+            target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
 
             print(f"{pred_audios.shape=}")
             print(f"{target_audio.shape=}")
