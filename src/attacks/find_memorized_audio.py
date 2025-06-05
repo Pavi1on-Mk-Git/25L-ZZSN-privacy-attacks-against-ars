@@ -77,7 +77,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
             print(f"{pred.shape=}")
             N, K, T = pred.shape
             assert target.shape == (K, T)
-            # continue
 
             pred = pred.to(device)
             target = target.to(device)
@@ -85,30 +84,18 @@ class ExtractMemorizedAudio(FeatureExtractor):
             pred_audios = self.model.tokens_to_audio(pred)
             target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
 
-            print(f"{pred_audios.shape=}")
-            print(f"{target_audio.shape=}")
-
             pred_features = self.embedding_model.get_embeddings(pred_audios)
             target_features = self.embedding_model.get_embeddings(target_audio)
 
-            print(f"{pred_features.shape=}")
-            print(f"{target_features.shape=}")
+            assert pred_features.shape[0] == N
+            N, F = pred_features.shape
+            assert target_features.shape == (1, F)
 
             cosines = self.get_cosine(target_features, pred_features).cpu()
-            print(f"{cosines.shape=}")
+            assert cosines.shape == (N,)
 
             return
 
-        #     cosines = torch.cat(
-        #         [
-        #             torch.stack(
-        #                 [self.get_cosine(features_real[[i]], features_pred[[i]]).cpu() for i in range(B)],
-        #                 dim=0,
-        #             )
-        #             for features_pred in features_generated
-        #         ],
-        #         dim=1,
-        #     ).T
         #     out.append(
         #         [
         #             batch[:, 5, -1].cpu(),

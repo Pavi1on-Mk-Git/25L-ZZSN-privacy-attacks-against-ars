@@ -58,10 +58,10 @@ class GenerateCandidatesAudio(FeatureExtractor):
                 pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
 
                 pred.append(pred_tokens)
-                sample_indexes.append(sample_index.item())
 
             pred = torch.stack(pred, dim=1)
             out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
+            sample_indexes.append(sample_index.item())
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
