@@ -72,6 +72,15 @@ class ExtractMemorizedAudio(FeatureExtractor):
             pred = pred.to(device)
             target = target.to(device)
 
+            first_nan_index = target.isnan().any(dim=0).to(torch.int8).argmax()
+            target = target[:, :first_nan_index]
+
+            pred_cut = []
+            for single_pred in pred:
+                single_pred = single_pred[:, :first_nan_index]
+                pred_cut.append(single_pred)
+            pred = torch.stack(pred_cut, dim=0)
+
             pred_audios = self.model.tokens_to_audio(pred)
             target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
 
