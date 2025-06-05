@@ -12,7 +12,7 @@ from tqdm import tqdm
 from torchmetrics.functional import pairwise_cosine_similarity
 import json
 
-from audiocraft.audiocraft.data.audio import audio_write
+from audiocraft.data.audio import audio_write
 import os
 
 
