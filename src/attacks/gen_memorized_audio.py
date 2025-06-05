@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 import numpy as np
 import json
+from math import ceil
 
 
 class GenerateCandidatesAudio(FeatureExtractor):
@@ -58,28 +59,30 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         out = []
         sample_indexes = []
-        for batch in tqdm(self.batched(ins), desc="Generating Samples"):
+        for batch in tqdm(
+            self.batched(ins), desc="Generating Samples", total=ceil(len(ins) / self.attack_cfg.batch_size)
+        ):
             target_tokens = []
-            sample_caption = []
-            sample_index = []
+            batch_caption = []
+            batch_indices = []
 
             for sample_in in batch:
                 single_target_tokens, single_sample_caption, single_sample_index = sample_in
                 target_tokens.append(single_target_tokens)
-                sample_caption.append(single_sample_caption)
-                sample_index.append(single_sample_index)
+                batch_caption.append(single_sample_caption)
+                batch_indices.append(single_sample_index)
 
             target_tokens = torch.concat(target_tokens, dim=0)
 
             pred = []
             for top_tokens in TOP_TOKENS:
-                pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
+                pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, batch_caption)
 
                 pred.append(pred_tokens)
 
             pred = torch.stack(pred, dim=1)
             out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
-            sample_indexes.extend(sample_index)
+            sample_indexes.extend(batch_indices)
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(

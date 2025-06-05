@@ -14,6 +14,7 @@ import json
 
 from audiocraft.data.audio import audio_write
 from pathlib import Path
+import shutil
 
 
 PADDING_TOKEN = -9223372036854775808
@@ -55,8 +56,12 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
-        Path("analysis/plots/memorization").mkdir(parents=True, exist_ok=True)
-        Path("generated_samples").mkdir(parents=True, exist_ok=True)
+        csv_dir = Path("analysis/plots/memorization")
+        csv_dir.mkdir(parents=True, exist_ok=True)
+
+        samples_dir = Path("generated_samples")
+        shutil.rmtree(samples_dir)
+        samples_dir.mkdir(parents=True)
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
@@ -75,23 +80,17 @@ class ExtractMemorizedAudio(FeatureExtractor):
             pred = pred.to(device)
             target = target.to(device)
 
-            print(f"{target=}")
-            print(f"{target.shape=}")
-            print(f"{pred.shape=}")
             first_pad_index = (target == PADDING_TOKEN).any(dim=0).to(torch.int8).argmax()
-            print(f"{first_pad_index=}")
             if first_pad_index > 0:
                 target = target[:, :first_pad_index]
                 pred = pred[:, :, :first_pad_index]
-            print(f"{target.shape=}")
-            print(f"{pred.shape=}")
 
             pred_audios = self.model.tokens_to_audio(pred)
             target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
 
             for pred_audio, prefix_size in zip(pred_audios, TOP_TOKENS):
-                audio_write(f"generated_samples/{sample_index}_{prefix_size}", pred_audio, 16_000)
-            audio_write(f"generated_samples/{sample_index}_target", target_audio.squeeze(0), 16_000)
+                audio_write(f"{samples_dir}/{sample_index}_{prefix_size}", pred_audio, 16_000)
+            audio_write(f"{samples_dir}/{sample_index}_target", target_audio.squeeze(0), 16_000)
 
             pred_features = self.embedding_model.get_embeddings(pred_audios)
             target_features = self.embedding_model.get_embeddings(target_audio)
@@ -120,6 +119,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
             ],
         )
         df.to_csv(
-            f"analysis/plots/memorization/{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
+            csv_dir / f"{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
             index=False,
         )

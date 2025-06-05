@@ -170,7 +170,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
                 conditions=condition,
                 max_gen_len=T,
                 use_sampling=True,
-                temp=0.1,
+                temp=1.0,
                 check=True,
             )
 
