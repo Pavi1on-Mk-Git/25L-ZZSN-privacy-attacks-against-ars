@@ -16,6 +16,9 @@ from audiocraft.data.audio import audio_write
 from pathlib import Path
 
 
+PADDING_TOKEN = -9223372036854775808
+
+
 class ExtractMemorizedAudio(FeatureExtractor):
     top_tokens = {
         "audiogen_medium": [0, 1, 5, 14, 30],
@@ -72,14 +75,16 @@ class ExtractMemorizedAudio(FeatureExtractor):
             pred = pred.to(device)
             target = target.to(device)
 
-            first_nan_index = target.isnan().any(dim=0).to(torch.int8).argmax()
-            target = target[:, :first_nan_index]
-
-            pred_cut = []
-            for single_pred in pred:
-                single_pred = single_pred[:, :first_nan_index]
-                pred_cut.append(single_pred)
-            pred = torch.stack(pred_cut, dim=0)
+            print(f"{target=}")
+            print(f"{target.shape=}")
+            print(f"{pred.shape=}")
+            first_pad_index = (target == PADDING_TOKEN).any(dim=0).to(torch.int8).argmax()
+            print(f"{first_pad_index=}")
+            if first_pad_index > 0:
+                target = target[:, :first_pad_index]
+                pred = pred[:, :, :first_pad_index]
+            print(f"{target.shape=}")
+            print(f"{pred.shape=}")
 
             pred_audios = self.model.tokens_to_audio(pred)
             target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
