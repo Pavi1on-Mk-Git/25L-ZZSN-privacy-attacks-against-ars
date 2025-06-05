@@ -25,3 +25,5 @@ datasets/
 sscd_disc_mixup.torchscript.pt
 samples/
 test.ipynb
+generated_samples/
+memorization/
