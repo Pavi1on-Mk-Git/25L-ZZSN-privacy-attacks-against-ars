@@ -25,6 +25,12 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         return features, captions
 
+    def batched(self, iterable):
+        n = self.attack_cfg.batch_size
+        length = len(iterable)
+        for index in range(0, length, n):
+            yield iterable[index : min(index + n, length)]
+
     @torch.no_grad()
     def run(self, *args, **kwargs) -> T:
         self.model: AudiocraftModelWrapper
@@ -89,9 +95,3 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         with open(indices_filename, "w") as fh:
             json.dump(sample_indexes, fh)
-
-
-def batched(iterable, n=16):
-    length = len(iterable)
-    for index in range(0, length, n):
-        yield iterable[index : min(index + n, length)]

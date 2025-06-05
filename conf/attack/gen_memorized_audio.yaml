@@ -1,3 +1,4 @@
 name: gen_memorized_audio
 members_lower: false
-n_samples: 200
+n_samples: 256
+batch_size: 16
