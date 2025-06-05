@@ -159,6 +159,7 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
 
     @torch.no_grad()
     def generate_single_memorization(self, top: int, target_tokens: T, caption: str) -> T:
+        print(f"{caption=}")
         B, K, T = target_tokens.shape
         assert B == 1
 
