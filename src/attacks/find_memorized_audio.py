@@ -1,4 +1,5 @@
 from src.attacks import FeatureExtractor
+from src.models.audiocraft import AudiocraftModelWrapper
 from torch import Tensor as T
 import torch
 
@@ -65,6 +66,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
+        self.model: AudiocraftModelWrapper
+
         preds, targets, sample_indices = self.load_candidates()
         device = self.model_cfg.device
 
@@ -76,6 +79,12 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
             pred = pred.to(device)
             target = target.to(device)
+
+            pred_audios = self.model.tokens_to_audio(pred)
+            target_audio = self.model.tokens_to_audio(target)
+
+            print(f"{pred_audios.shape=}")
+            print(f"{target_audio.shape=}")
 
             return
 
