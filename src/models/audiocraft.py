@@ -3,7 +3,6 @@ import torch
 from torch import Tensor as T
 from audiocraft.models import MusicGen, AudioGen
 from audiocraft.modules.conditioners import ConditioningAttributes
-from audiocraft.solvers.musicgen import MusicGenSolver
 
 
 class AudiocraftModelWrapper(GeneralVARWrapper):
@@ -183,6 +182,10 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
     @torch.no_grad()
     def tokens_to_img(self, tokens: T, *args, **kwargs) -> T:
         raise NotImplementedError
+
+    @torch.no_grad()
+    def tokens_to_audio(self, tokens: T) -> T:
+        return self.tokenizer.decode(tokens, None)
 
     def get_target_label_memorization(
         self, members_features: T, scores: T, captions: list[str], k: int
