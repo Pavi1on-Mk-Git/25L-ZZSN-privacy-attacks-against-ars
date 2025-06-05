@@ -57,8 +57,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
-        dataset = AudioDataset(self.dataset_cfg)
-
         csv_dir = Path("analysis/plots/memorization")
         csv_dir.mkdir(parents=True, exist_ok=True)
 
@@ -77,8 +75,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
         out = []
 
         for pred, target, sample_index in tqdm(zip(preds, targets, sample_indices), total=len(sample_indices)):
-            sample_index = dataset.get_filename_index(sample_index)
-
             N, K, T = pred.shape
             assert target.shape == (K, T)
 
@@ -123,6 +119,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
                 *[f"cosine_{i}" for i in TOP_TOKENS],
             ],
         )
+        df.sort_values(by=f"cosine_{TOP_TOKENS[-1]}", ascending=False)
         df.to_csv(
             csv_dir / f"{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
             index=False,

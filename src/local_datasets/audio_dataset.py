@@ -52,7 +52,7 @@ class AudioDataset(Dataset):
         self.filenames = []
         # filter out captions with "speech"
         for filename in filenames:
-            caption_idx = _get_sample_index(filename)
+            caption_idx = _get_dataset_sample_index(filename)
             caption = self.descriptions[caption_idx]
             if "speech" not in caption and "speak" not in caption:
                 self.filenames.append(filename)
@@ -67,15 +67,10 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        caption_idx = _get_sample_index(filename)
+        caption_idx = _get_dataset_sample_index(filename)
         caption = preprocess_caption(self.descriptions[caption_idx])
 
         return self._read_audio_as_mono(filename), caption
-
-    def get_filename_index(self, idx):
-        filename = self.filenames[idx]
-        filename_idx = _get_sample_index(filename)
-        return filename_idx
 
     def _read_audio_as_mono(self, filename: str) -> T:
         try:
@@ -88,7 +83,7 @@ class AudioDataset(Dataset):
         return audio
 
 
-def _get_sample_index(filename: str) -> int:
+def _get_dataset_sample_index(filename: str) -> int:
     return int(filename[:-4].split("/")[-1])
 
 
