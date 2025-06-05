@@ -85,8 +85,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
                 ]
             )
 
-        out = np.concatenate(out, axis=1).T
-        print(out.shape)
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
         df = pd.DataFrame(
