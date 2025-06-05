@@ -64,6 +64,9 @@ class ExtractMemorizedAudio(FeatureExtractor):
         shutil.rmtree(samples_dir)
         samples_dir.mkdir(parents=True)
 
+        with open("out/features/audiogen_medium_mem_info_10k_audiocaps_train_conditions.json") as fh:
+            captions = json.load(fh)
+
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
         self.model: AudiocraftModelWrapper
@@ -106,6 +109,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
             out.append(
                 [
                     sample_index,
+                    captions[sample_index],
                     *[self.distance(target, single_pred) for single_pred in pred],
                     *cosines.tolist(),
                 ]
@@ -115,6 +119,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
             out,
             columns=[
                 "sample_idx",
+                "caption",
                 *[f"token_eq_{i}" for i in TOP_TOKENS],
                 *[f"cosine_{i}" for i in TOP_TOKENS],
             ],
