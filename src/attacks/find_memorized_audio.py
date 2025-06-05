@@ -5,6 +5,7 @@ from torch import Tensor as T
 import torch
 
 import numpy as np
+import pandas as pd
 from torch import Tensor
 
 from tqdm import tqdm
@@ -17,28 +18,9 @@ class ExtractMemorizedAudio(FeatureExtractor):
         "audiogen_medium": [0, 1, 5, 14, 30],
     }
 
-    # distance = {
-    #     "var_30": lambda target, pred: (target == pred).sum(dim=1).cpu(),
-    #     "rar_xxl": lambda target, pred: (target == pred).sum(dim=1).cpu(),
-    #     "mar_h": lambda target, pred: torch.sqrt(torch.pow(target - pred, 2).sum(dim=1)).cpu(),
-    # }
-
-    # @torch.no_grad()
-    # def get_features(self, img: T) -> T:
-    #     model = torch.jit.load("sscd_disc_mixup.torchscript.pt").to(self.model_cfg.device).eval()
-
-    #     normalize = transforms.Normalize(
-    #         mean=[0.485, 0.456, 0.406],
-    #         std=[0.229, 0.224, 0.225],
-    #     )
-    #     skew_320 = transforms.Compose(
-    #         [
-    #             transforms.Resize([320, 320]),
-    #             normalize,
-    #         ]
-    #     )
-    #     features = model(skew_320(img))
-    #     return features
+    @staticmethod
+    def distance(target, pred):
+        return (target == pred).sum(dim=1).cpu()
 
     def get_cosine(self, features_real: T, features_generated: T) -> T:
         cosine_similarity = (
@@ -73,6 +55,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         preds, targets, sample_indices = self.load_candidates()
         device = self.model_cfg.device
 
+        out = []
+
         for pred, target, sample_index in tqdm(zip(preds, targets, sample_indices), total=len(sample_indices)):
             print(f"{pred.shape=}")
             N, K, T = pred.shape
@@ -94,32 +78,27 @@ class ExtractMemorizedAudio(FeatureExtractor):
             cosines = self.get_cosine(target_features, pred_features).cpu()
             assert cosines.shape == (N,)
 
-            return
+            out.append(
+                [
+                    sample_index,
+                    *[self.distance(target, single_pred) for single_pred in pred],
+                    *cosines.tolist(),
+                ]
+            )
 
-        #     out.append(
-        #         [
-        #             batch[:, 5, -1].cpu(),
-        #             batch[:, 5, -2].cpu(),
-        #             *[self.distance[self.model_cfg.name](target, pred) for pred in preds],
-        #             *cosines.tolist(),
-        #         ]
-        #     )
+        out = np.concatenate(out, axis=1).T
+        print(out.shape)
+        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
-        # out = np.concatenate(out, axis=1).T
-        # print(out.shape)
-        # TOP_TOKENS = self.top_tokens[self.model_cfg.name]
-
-        # df = pd.DataFrame(
-        #     out,
-        #     columns=[
-        #         "sample_idx",
-        #         "label",
-        #         *[f"token_eq_{i}" for i in TOP_TOKENS],
-        #         *[f"cosine_{i}" for i in TOP_TOKENS],
-        #     ],
-        # )
-        # df.to_csv(
-        #     f"analysis/plots/memorization/{self.model_cfg.name}_memorized_"
-        #     f"{self.model_cfg.name}_{self.attack_cfg.std}.csv",
-        #     index=False,
-        # )
+        df = pd.DataFrame(
+            out,
+            columns=[
+                "sample_idx",
+                *[f"token_eq_{i}" for i in TOP_TOKENS],
+                *[f"cosine_{i}" for i in TOP_TOKENS],
+            ],
+        )
+        df.to_csv(
+            f"analysis/plots/memorization/{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
+            index=False,
+        )
