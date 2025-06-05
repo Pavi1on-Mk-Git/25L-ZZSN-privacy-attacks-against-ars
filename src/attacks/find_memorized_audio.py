@@ -52,12 +52,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
         )["data"]
 
         data = torch.from_numpy(data)
-        print(f"{data.shape=}")
-        data = data.reshape(data.shape[0], 2, -1)
-        print(f"{data.shape=}")
-        pred, target = data[:, 0], data[:, 1]
-        print(f"{pred.shape=}")
-        print(f"{target.shape=}")
+        pred, target = data[:, :5], data[:, 5]
 
         indices_filename = (
             f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
@@ -75,7 +70,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
         for pred, target, sample_index in tqdm(zip(preds, targets, sample_indices), total=len(sample_indices)):
             print(f"{pred.shape=}")
-            K, T = pred.shape
+            N, K, T = pred.shape
             assert target.shape == (K, T)
             # continue
 
