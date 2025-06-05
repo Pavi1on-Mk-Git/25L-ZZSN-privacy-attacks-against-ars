@@ -170,9 +170,9 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
             generated = self.generator.generate(
                 prompt=prompt,
                 conditions=condition,
-                max_gen_len=10 * 16_000,  # duration * sample_rate
+                max_gen_len=T,
                 use_sampling=True,
-                temp=1.0,
+                temp=0.000001,
                 check=True,
             )
 
