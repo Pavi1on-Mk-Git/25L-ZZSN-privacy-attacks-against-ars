@@ -3,7 +3,9 @@ import torch
 from torch import Tensor as T
 from figaro.models.seq2seq import Seq2SeqModule
 from figaro.constants import PAD_TOKEN
+from figaro.input_representation import remi2midi
 from transformers.models.bert.modeling_bert import BertAttention
+from pretty_midi import PrettyMIDI
 
 
 def load_from_checkpoint(model_type, checkpoint):
@@ -55,19 +57,19 @@ class FigaroWrapper(GeneralVARWrapper):
         """
         if not is_cfg:
             return self.generator(
-                x=batch["input_ids"],
+                x=batch["input_ids"][:, : self.generator.context_size],
                 z=batch["latents"],
-                bar_ids=batch["bar_ids"],
-                position_ids=batch["position_ids"],
+                bar_ids=batch["bar_ids"][:, : self.generator.context_size],
+                position_ids=batch["position_ids"][:, : self.generator.context_size],
                 description_bar_ids=None,
             )
         else:
             self.generator.description_flavor = "none"
             out = self.generator(
-                x=batch["input_ids"],
+                x=batch["input_ids"][:, : self.generator.context_size],
                 z=None,
-                bar_ids=batch["bar_ids"],
-                position_ids=batch["position_ids"],
+                bar_ids=batch["bar_ids"][:, : self.generator.context_size],
+                position_ids=batch["position_ids"][:, : self.generator.context_size],
                 description_bar_ids=None,
             )
             self.generator.description_flavor = "latent"
@@ -118,33 +120,45 @@ class FigaroWrapper(GeneralVARWrapper):
             "latents": latent,
         }
 
-        generated = self.generator.sample(batch=batch, max_length=T - 1, temp=0.0)
+        pad_index = torch.argmax(torch.any((target_tokens == 0), dim=1).int())
 
-        assert generated["sequences"].shape == target_tokens.shape
+        if pad_index == 0:
+            pad_index = T
 
-        return generated["sequences"]
+        generated = self.generator.sample(batch=batch, max_length=pad_index - 1, temp=0.0)
+
+        generated_padding = torch.zeros(
+            (generated["sequences"].shape[0], T - generated["sequences"].shape[1]),
+            dtype=generated["sequences"].dtype,
+            device=generated["sequences"].device,
+        )
+
+        return torch.cat([generated["sequences"], generated_padding], dim=1)
 
     @torch.no_grad()
-    def tokens_to_img(self, tokens: T, *args, **kwargs) -> T:
-        raise NotImplementedError
+    def tokens_to_img(self, tokens: T, *args, **kwargs) -> list[PrettyMIDI]:
+        midis = []
+        for i in range(tokens.shape[0]):
+            events = self.generator.vocab.decode(tokens[i].cpu())
+            midi = remi2midi(events)
+            midis.append(midi)
+        return midis
 
     def get_target_label_memorization(
-        self, members_features: T, scores: T, latents: T, bar_ids: T, position_ids: T, k: int
+        self, tokens: T, scores: T, latents: T, bar_ids: T, position_ids: T, k: int
     ) -> tuple[T, T, T, T, T]:
         mem_samples_indices = torch.topk(scores, len(scores)).indices
         sample_index = mem_samples_indices[k]
 
-        target_tokens = members_features[sample_index, [0], :].to(self.model_cfg.device).long()
+        pad_index = torch.argmax(torch.any((latents[sample_index] == 0), dim=1).int())
 
-        nan_index = torch.argmax(torch.any(latents[sample_index], dim=1).int())
-
-        if nan_index != 0:
-            target_latents = latents[[sample_index], :nan_index, :]
+        if pad_index != 0:
+            target_latents = latents[[sample_index], :pad_index, :]
         else:
             target_latents = latents[[sample_index], :, :]
 
         return (
-            target_tokens,
+            tokens[[sample_index], :].to(self.model_cfg.device).long(),
             bar_ids[[sample_index], :].to(self.model_cfg.device).long(),
             position_ids[[sample_index], :].to(self.model_cfg.device).long(),
             target_latents.to(self.model_cfg.device),

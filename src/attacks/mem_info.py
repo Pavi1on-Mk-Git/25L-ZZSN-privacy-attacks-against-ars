@@ -79,103 +79,110 @@ class MemInfoExtractor(FeatureExtractor):
 
         tokens = self.model.tokenize(device_batch)
         logits = self.model.forward(device_batch)
+        bar_ids = batch["bar_ids"]
+        position_ids = batch["position_ids"]
+        latents = batch["latents"]
 
         probs = torch.nn.functional.softmax(logits, dim=-1)  # (B, K, T, card) or (B, N_tokens, card)
 
-        token_probs = self.get_token_probs(tokens, probs)
-        ranks = self.get_token_ranks(tokens, probs)
+        token_probs = self.get_token_probs(tokens[:, : self.model.generator.context_size], probs)
+        ranks = self.get_token_ranks(tokens[:, : self.model.generator.context_size], probs)
         is_top = ranks == 0
         max_probs = probs.max(dim=-1).values.unsqueeze(1)
         tokens_pred = logits.argmax(dim=-1).unsqueeze(1)
         features = torch.cat(
-            [tokens.unsqueeze(1), is_top, ranks, max_probs, token_probs, tokens_pred],
+            [is_top, ranks, max_probs, token_probs, tokens_pred],
             dim=1,
         )  # (B, N_features, N_tokens) or (B, N_features, K, T)
 
+        if os.path.isfile(self.tokens_path_out):
+            all_tokens = torch.from_numpy(np.load(self.tokens_path_out))
+            new_len = max(all_tokens.shape[1], tokens.shape[1])
+
+            all_tokens_padding = torch.zeros(
+                (all_tokens.shape[0], new_len - all_tokens.shape[1]),
+                dtype=all_tokens.dtype,
+                device=all_tokens.device,
+            )
+            tokens_padding = torch.zeros(
+                (tokens.shape[0], new_len - tokens.shape[1]),
+                dtype=tokens.dtype,
+                device=tokens.device,
+            )
+            all_tokens = torch.cat([all_tokens, all_tokens_padding], dim=1)
+            tokens = torch.cat([tokens, tokens_padding], dim=1)
+            all_tokens = torch.cat([all_tokens, tokens.cpu()])
+        else:
+            all_tokens = tokens.cpu()
+
+        np.save(self.tokens_path_out, all_tokens)
+
         if os.path.isfile(self.latents_path_out):
             all_latents = torch.from_numpy(np.load(self.latents_path_out))
-            new_len = max(all_latents.shape[1], batch["latents"].shape[1])
+            new_len = max(all_latents.shape[1], latents.shape[1])
 
-            all_conditions_padding = (
-                torch.ones(
-                    (all_latents.shape[0], new_len - all_latents.shape[1], all_latents.shape[2]),
-                    dtype=all_latents.dtype,
-                    device=all_latents.device,
-                )
-                * torch.nan
+            all_conditions_padding = torch.zeros(
+                (all_latents.shape[0], new_len - all_latents.shape[1], all_latents.shape[2]),
+                dtype=all_latents.dtype,
+                device=all_latents.device,
             )
-            latents_padding = (
-                torch.ones(
-                    (batch["latents"].shape[0], new_len - batch["latents"].shape[1], batch["latents"].shape[2]),
-                    dtype=batch["latents"].dtype,
-                    device=batch["latents"].device,
-                )
-                * torch.nan
+            latents_padding = torch.zeros(
+                (latents.shape[0], new_len - latents.shape[1], latents.shape[2]),
+                dtype=latents.dtype,
+                device=latents.device,
             )
             all_latents = torch.cat([all_latents, all_conditions_padding], dim=1)
-            latents = torch.cat([batch["latents"], latents_padding], dim=1)
+            latents = torch.cat([latents, latents_padding], dim=1)
             all_latents = torch.cat([all_latents, latents])
         else:
-            all_latents = batch["latents"]
+            all_latents = latents
 
         np.save(self.latents_path_out, all_latents)
 
         if os.path.isfile(self.bar_ids_path_out):
             all_bar_ids = torch.from_numpy(np.load(self.bar_ids_path_out))
-            new_len = max(all_bar_ids.shape[1], batch["bar_ids"].shape[1])
+            new_len = max(all_bar_ids.shape[1], bar_ids.shape[1])
 
-            all_conditions_padding = (
-                torch.ones(
-                    (all_bar_ids.shape[0], new_len - all_bar_ids.shape[1]),
-                    dtype=all_bar_ids.dtype,
-                    device=all_bar_ids.device,
-                )
-                * torch.nan
+            all_conditions_padding = torch.zeros(
+                (all_bar_ids.shape[0], new_len - all_bar_ids.shape[1]),
+                dtype=all_bar_ids.dtype,
+                device=all_bar_ids.device,
             )
-            bar_ids_padding = (
-                torch.ones(
-                    (batch["bar_ids"].shape[0], new_len - batch["bar_ids"].shape[1]),
-                    dtype=batch["bar_ids"].dtype,
-                    device=batch["bar_ids"].device,
-                )
-                * torch.nan
+            bar_ids_padding = torch.zeros(
+                (bar_ids.shape[0], new_len - bar_ids.shape[1]),
+                dtype=bar_ids.dtype,
+                device=bar_ids.device,
             )
             all_bar_ids = torch.cat([all_bar_ids, all_conditions_padding], dim=1)
-            bar_ids = torch.cat([batch["bar_ids"], bar_ids_padding], dim=1)
+            bar_ids = torch.cat([bar_ids, bar_ids_padding], dim=1)
             all_bar_ids = torch.cat([all_bar_ids, bar_ids])
         else:
-            all_bar_ids = batch["bar_ids"]
+            all_bar_ids = bar_ids
 
         np.save(self.bar_ids_path_out, all_bar_ids)
 
         if os.path.isfile(self.position_ids_path_out):
             all_position_ids = torch.from_numpy(np.load(self.position_ids_path_out))
-            new_len = max(all_position_ids.shape[1], batch["position_ids"].shape[1])
+            new_len = max(all_position_ids.shape[1], position_ids.shape[1])
 
-            all_conditions_padding = (
-                torch.ones(
-                    (all_position_ids.shape[0], new_len - all_position_ids.shape[1]),
-                    dtype=all_position_ids.dtype,
-                    device=all_position_ids.device,
-                )
-                * torch.nan
+            all_conditions_padding = torch.zeros(
+                (all_position_ids.shape[0], new_len - all_position_ids.shape[1]),
+                dtype=all_position_ids.dtype,
+                device=all_position_ids.device,
             )
-            position_ids_padding = (
-                torch.ones(
-                    (
-                        batch["position_ids"].shape[0],
-                        new_len - batch["position_ids"].shape[1],
-                    ),
-                    dtype=batch["position_ids"].dtype,
-                    device=batch["position_ids"].device,
-                )
-                * torch.nan
+            position_ids_padding = torch.zeros(
+                (
+                    position_ids.shape[0],
+                    new_len - position_ids.shape[1],
+                ),
+                dtype=position_ids.dtype,
+                device=position_ids.device,
             )
             all_position_ids = torch.cat([all_position_ids, all_conditions_padding], dim=1)
-            position_ids = torch.cat([batch["position_ids"], position_ids_padding], dim=1)
+            position_ids = torch.cat([position_ids, position_ids_padding], dim=1)
             all_position_ids = torch.cat([all_position_ids, position_ids])
         else:
-            all_position_ids = batch["position_ids"]
+            all_position_ids = position_ids
 
         np.save(self.position_ids_path_out, all_position_ids)
 

@@ -17,24 +17,27 @@ class GenerateCandidatesFigaro(FeatureExtractor):
     def get_data(self, split: str) -> tuple[np.ndarray, list[str]]:
         assert split == "train"
         features_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train.npz"
+        tokens_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_tokens.npy"
         captions_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_latents.npy"
         bar_ids_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_bar_ids.npy"
         position_ids_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_position_ids.npy"
 
         features = np.load(features_filename, allow_pickle=True)["data"]
+        tokens = np.load(tokens_filename)
         latents = np.load(captions_filename)
         bar_ids = np.load(bar_ids_filename)
         position_ids = np.load(position_ids_filename)
 
-        return features, latents, bar_ids, position_ids
+        return features, tokens, latents, bar_ids, position_ids
 
     @torch.no_grad()
     def run(self, *args, **kwargs) -> T:
         self.model: FigaroWrapper
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
-        members_features, latents, bar_ids, position_ids = self.get_data(self.dataset_cfg.split)
+        members_features, tokens, latents, bar_ids, position_ids = self.get_data(self.dataset_cfg.split)
         members_features = torch.from_numpy(members_features)  # B, F, T
+        tokens = torch.from_numpy(tokens)
         bar_ids = torch.from_numpy(bar_ids)
         position_ids = torch.from_numpy(position_ids)
         latents = torch.from_numpy(latents)
@@ -42,18 +45,15 @@ class GenerateCandidatesFigaro(FeatureExtractor):
         print("Data loaded")
 
         torch.manual_seed(0)
-        scores = self.model.get_memorization_scores(members_features, 1)  # B
+        scores = self.model.get_memorization_scores(members_features, 0)  # B
         assert scores.shape == (B,)
 
         ins = []
 
         for top_k in tqdm(range(self.attack_cfg.n_samples), desc="Getting Samples"):
             target_tokens, target_bar_ids, target_position_ids, sample_latent, sample_index = (
-                self.model.get_target_label_memorization(
-                    members_features, scores, latents, bar_ids, position_ids, top_k
-                )
+                self.model.get_target_label_memorization(tokens, scores, latents, bar_ids, position_ids, top_k)
             )
-            assert target_tokens.shape == (1, T)
             assert sample_index.shape == (1,)
 
             ins.append((target_tokens, target_bar_ids, target_position_ids, sample_latent, sample_index))
@@ -67,24 +67,23 @@ class GenerateCandidatesFigaro(FeatureExtractor):
             for top_tokens in TOP_TOKENS:
                 pred_tokens = self.model.generate_single_memorization(
                     top_tokens, target_tokens, target_bar_ids, target_position_ids, sample_latent
-                )
+                ).cpu()
 
                 pred.append(pred_tokens)
-                sample_indexes.append(sample_index.item())
 
+            sample_indexes.append(sample_index.item())
             pred = torch.stack(pred, dim=1)
-            out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
+            out.append(torch.cat([pred, target_tokens.unsqueeze(1).cpu()], dim=1))
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
-            f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
-            f"memorized_figaro_{self.dataset_cfg.split}.npz",
+            f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_memorized_{self.dataset_cfg.split}.npz",
             data=out,
         )
 
         indices_filename = (
             f"{self.config.path_to_features}/{self.model_cfg.name}_mem_info_"
-            + f"memorized_figaro_{self.dataset_cfg.split}_indexes.json"
+            + f"memorized_{self.dataset_cfg.split}_indexes.json"
         )
 
         with open(indices_filename, "w") as fh:

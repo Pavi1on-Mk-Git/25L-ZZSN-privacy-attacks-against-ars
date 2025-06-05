@@ -54,13 +54,15 @@ def get_figaro_dataloader(config: DictConfig, model_cfg: DictConfig, dataset_cfg
 
     dataset = MidiDataset(
         midi_files=files,
-        max_len=256,
+        max_len=dataset_cfg.max_len,
         max_bars=256,
         description_flavor="latent",
         vae_module=model,
         device=model_cfg.device,
     )
-    coll = SeqCollator(context_size=-1)
+    coll = SeqCollator(
+        context_size=dataset_cfg.max_len,
+    )
 
     g = torch.Generator()
     g.manual_seed(model_cfg.seed)

@@ -2,3 +2,4 @@ name: lakhmidi
 data_dir: /net/pr2/projects/plgrid/plggzzsn2025/lmd_full
 train_data: ./figaro/splits/train.txt
 test_data: ./figaro/splits/test.txt
+max_len: 256
