@@ -158,20 +158,19 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     @torch.no_grad()
-    def generate_single_memorization(self, top: int, target_tokens: T, caption: str) -> T:
-        print(f"{caption=}")
+    def generate_single_memorization(self, top: int, target_tokens: T, captions: str) -> T:
         B, K, T = target_tokens.shape
-        assert B == 1
 
         prompt = target_tokens[:, :, :top]
-        condition = [ConditioningAttributes(text={"description": caption})]
+        condition = [ConditioningAttributes(text={"description": caption}) for caption in captions]
 
         with self.autocast:
             generated = self.generator.generate(
                 prompt=prompt,
                 conditions=condition,
                 max_gen_len=T,
-                use_sampling=False,
+                use_sampling=True,
+                temp=0.1,
                 check=True,
             )
 

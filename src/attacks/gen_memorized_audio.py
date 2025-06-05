@@ -48,11 +48,23 @@ class GenerateCandidatesAudio(FeatureExtractor):
             assert target_tokens.shape == (1, K, T)
             assert sample_index.shape == (1,)
 
-            ins.append((target_tokens, sample_caption, sample_index))
+            ins.append((target_tokens, sample_caption, sample_index.item()))
 
         out = []
         sample_indexes = []
-        for target_tokens, sample_caption, sample_index in tqdm(ins, desc="Generating Samples"):
+        for batch in tqdm(batched(ins), desc="Generating Samples"):
+            target_tokens = []
+            sample_caption = []
+            sample_index = []
+
+            for sample_in in batch:
+                single_target_tokens, single_sample_caption, single_sample_index = batch
+                target_tokens.append(single_target_tokens)
+                sample_caption.append(single_sample_caption)
+                sample_index.append(single_sample_index)
+
+            target_tokens = torch.concat(target_tokens, dim=0)
+
             pred = []
             for top_tokens in TOP_TOKENS:
                 pred_tokens = self.model.generate_single_memorization(top_tokens, target_tokens, sample_caption)
@@ -61,7 +73,7 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
             pred = torch.stack(pred, dim=1)
             out.append(torch.cat([pred, target_tokens.unsqueeze(1)], dim=1).cpu())
-            sample_indexes.append(sample_index.item())
+            sample_indexes.extend(sample_index)
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
@@ -77,3 +89,9 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         with open(indices_filename, "w") as fh:
             json.dump(sample_indexes, fh)
+
+
+def batched(iterable, n=16):
+    length = len(iterable)
+    for index in range(0, length, n):
+        yield iterable[index : min(index + n, length)]

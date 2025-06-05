@@ -2,13 +2,14 @@ import sys
 
 sys.path.append("./audiocraft")
 
-from audiocraft.models import AudioGen
-from audiocraft.data.audio import audio_write
+from audiocraft.audiocraft.models import AudioGen
+from audiocraft.audiocraft.data.audio import audio_write
 
-model = AudioGen.get_pretrained("facebook/audiogen_medium")
+model = AudioGen.get_pretrained("facebook/audiogen-medium")
 model.set_generation_params(duration=8)  # generate 8 seconds.
+model.set_generation_params(temperature=1.0)
 
-descriptions = ["happy rock", "energetic EDM"]
+descriptions = ["Water trickle puddle"]
 
 wav = model.generate(descriptions)  # generates 2 samples.
 
