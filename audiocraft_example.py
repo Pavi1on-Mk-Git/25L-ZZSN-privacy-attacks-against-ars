@@ -2,10 +2,10 @@ import sys
 
 sys.path.append("./audiocraft")
 
-from audiocraft.models import MusicGen
+from audiocraft.models import AudioGen
 from audiocraft.data.audio import audio_write
 
-model = MusicGen.get_pretrained("small")
+model = AudioGen.get_pretrained("facebook/audiogen_medium")
 model.set_generation_params(duration=8)  # generate 8 seconds.
 
 descriptions = ["happy rock", "energetic EDM"]
