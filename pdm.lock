@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:36a754d09684ef46459e198007e5eda29dc3e4d7c09ae0ad5873585de4e692c7"
+content_hash = "sha256:a4a3b5eef7a3f1beb6140996e6db8b72c99158fea347c52b914409b96c94ffa4"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -1595,6 +1595,21 @@ dependencies = [
 files = [
     {file = "requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"},
     {file = "requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760"},
+]
+
+[[package]]
+name = "resampy"
+version = "0.4.3"
+summary = "Efficient signal resampling"
+groups = ["default"]
+dependencies = [
+    "importlib-resources; python_version < \"3.9\"",
+    "numba>=0.53",
+    "numpy>=1.17",
+]
+files = [
+    {file = "resampy-0.4.3-py3-none-any.whl", hash = "sha256:ad2ed64516b140a122d96704e32bc0f92b23f45419e8b8f478e5a05f83edcebd"},
+    {file = "resampy-0.4.3.tar.gz", hash = "sha256:a0d1c28398f0e55994b739650afef4e3974115edbe96cd4bb81968425e916e47"},
 ]
 
 [[package]]
