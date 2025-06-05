@@ -45,7 +45,10 @@ class DataSource:
 
     @property
     def filename(self) -> str:
-        return f"{self.model_cfg.name}_{self.attack_cfg.name}_{self.config.run_id}_{self.dataset_cfg.name}_{self.dataset_cfg.split}"
+        return (
+            f"{self.model_cfg.name}_{self.attack_cfg.name}_{self.config.run_id}_"
+            f"{self.dataset_cfg.name}_{self.dataset_cfg.split}"
+        )
 
     @property
     def path_out(self) -> str:

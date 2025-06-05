@@ -1,7 +1,6 @@
 from src.attacks import FeatureExtractor
 from src.models.audiocraft import AudiocraftModelWrapper
 from src.evaluation.audio_embedding import AudioEmbeddingModel
-from src.local_datasets.audio_dataset import AudioDataset
 from torch import Tensor as T
 import torch
 
@@ -65,7 +64,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
         samples_dir.mkdir(parents=True)
 
         with open(
-            f"out/features/{self.model_cfg.name}_mem_info_audiocaps_{self.dataset_cfg.split}_conditions.json"
+            f"out/features/{self.model_cfg.name}_mem_info_audiocaps_10k_{self.dataset_cfg.split}_conditions.json"
         ) as fh:
             captions = json.load(fh)
 
