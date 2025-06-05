@@ -64,7 +64,9 @@ class ExtractMemorizedAudio(FeatureExtractor):
         shutil.rmtree(samples_dir)
         samples_dir.mkdir(parents=True)
 
-        with open("out/features/audiogen_medium_mem_info_10k_audiocaps_train_conditions.json") as fh:
+        with open(
+            f"out/features/{self.model_cfg.name}_mem_info_audiocaps_{self.dataset_cfg.split}_conditions.json"
+        ) as fh:
             captions = json.load(fh)
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
@@ -126,6 +128,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
         )
         df.sort_values(by=f"cosine_{TOP_TOKENS[-1]}", ascending=False, inplace=True)
         df.to_csv(
-            csv_dir / f"{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
+            csv_dir / f"{self.model_cfg.name}_memorized_{self.model_cfg.name}_{self.dataset_cfg.split}.csv",
             index=False,
         )

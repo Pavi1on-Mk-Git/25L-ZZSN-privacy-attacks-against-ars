@@ -16,9 +16,9 @@ class GenerateCandidatesAudio(FeatureExtractor):
     }
 
     def get_data(self, split: str) -> tuple[np.ndarray, list[str]]:
-        assert split == "train"
-        features_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_train.npz"
-        captions_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_train_conditions.json"
+        filename_base = f"out/features/{self.model_cfg.name}_mem_info_audiocaps_{split}"
+        features_filename = f"{filename_base}.npz"
+        captions_filename = f"{filename_base}_conditions.json"
 
         features = np.load(features_filename, allow_pickle=True)["data"]
         with open(captions_filename, "r") as fh:
