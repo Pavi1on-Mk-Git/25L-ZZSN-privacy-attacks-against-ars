@@ -94,12 +94,11 @@ class ExtractMemorizedAudio(FeatureExtractor):
             print(f"{pred_features.shape=}")
             print(f"{target_features.shape=}")
 
+            cosines = self.get_cosine(target_features, pred_features).cpu()
+            print(f"{cosines.shape=}")
+
             return
 
-        #     out_preds = [self.model.tokens_to_img(*pred_arg).cpu() for pred_arg in pred_args]
-        #     out_target = self.model.tokens_to_img(*target_args).cpu()
-        #     features_real = self.get_features(out_target.to(device).clone()).cpu()
-        #     features_generated = [self.get_features(pred.to(device).clone()).cpu() for pred in out_preds]
         #     cosines = torch.cat(
         #         [
         #             torch.stack(
