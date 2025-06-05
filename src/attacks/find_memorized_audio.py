@@ -77,7 +77,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
             for pred_audio, prefix_size in zip(pred_audios, TOP_TOKENS):
                 audio_write(f"generated_samples/{sample_index}_{prefix_size}", pred_audio, 16_000)
-            audio_write(f"generated_samples/{sample_index}_target", target_audio, 16_000)
+            audio_write(f"generated_samples/{sample_index}_target", target_audio.squeeze(0), 16_000)
 
             pred_features = self.embedding_model.get_embeddings(pred_audios)
             target_features = self.embedding_model.get_embeddings(target_audio)
