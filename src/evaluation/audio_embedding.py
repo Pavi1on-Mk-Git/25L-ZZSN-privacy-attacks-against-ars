@@ -20,11 +20,11 @@ class AudioEmbeddingModel:
         self.model.to(self.device)
         self.model.eval()
 
-    def get_embeddings(self, x):
+    def get_embeddings(self, x: torch.Tensor):
         embd_lst = []
 
         for audio in x:
-            audio = audio.squeeze(0)
+            audio = audio.squeeze(0).numpy()
             embd = self.model.forward(audio, SAMPLE_RATE)
             embd = embd.cpu()
 
