@@ -12,6 +12,9 @@ from tqdm import tqdm
 from torchmetrics.functional import pairwise_cosine_similarity
 import json
 
+from audiocraft.audiocraft.data.audio import audio_write
+import os
+
 
 class ExtractMemorizedAudio(FeatureExtractor):
     top_tokens = {
@@ -49,6 +52,11 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
+        os.mkdir("analysis/plots/memorization")
+        os.mkdir("generated_samples")
+
+        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
+
         self.model: AudiocraftModelWrapper
         self.embedding_model = AudioEmbeddingModel()
 
@@ -67,6 +75,10 @@ class ExtractMemorizedAudio(FeatureExtractor):
             pred_audios = self.model.tokens_to_audio(pred)
             target_audio = self.model.tokens_to_audio(target.unsqueeze(0))
 
+            for pred_audio, prefix_size in zip(pred_audios, TOP_TOKENS):
+                filename = f"generated_samples/{sample_index}_{prefix_size}.wav"
+                audio_write(filename, pred_audio, 16_000)
+
             pred_features = self.embedding_model.get_embeddings(pred_audios)
             target_features = self.embedding_model.get_embeddings(target_audio)
 
@@ -84,8 +96,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
                     *cosines.tolist(),
                 ]
             )
-
-        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
         df = pd.DataFrame(
             out,
