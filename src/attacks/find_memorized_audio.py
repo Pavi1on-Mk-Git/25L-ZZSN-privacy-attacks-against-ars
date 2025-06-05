@@ -58,7 +58,6 @@ class ExtractMemorizedAudio(FeatureExtractor):
         out = []
 
         for pred, target, sample_index in tqdm(zip(preds, targets, sample_indices), total=len(sample_indices)):
-            print(f"{pred.shape=}")
             N, K, T = pred.shape
             assert target.shape == (K, T)
 
@@ -77,6 +76,9 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
             cosines = self.get_cosine(target_features, pred_features).cpu()
             assert cosines.shape == (N,)
+
+            print(f"{target.shape=}")
+            print(f"{[single_pred.shape for single_pred in pred]=}")
 
             out.append(
                 [
