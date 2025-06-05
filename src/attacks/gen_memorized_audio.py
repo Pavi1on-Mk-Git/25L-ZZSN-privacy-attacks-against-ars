@@ -58,13 +58,13 @@ class GenerateCandidatesAudio(FeatureExtractor):
 
         out = []
         sample_indexes = []
-        for batch in tqdm(batched(ins), desc="Generating Samples"):
+        for batch in tqdm(self.batched(ins), desc="Generating Samples"):
             target_tokens = []
             sample_caption = []
             sample_index = []
 
             for sample_in in batch:
-                single_target_tokens, single_sample_caption, single_sample_index = batch
+                single_target_tokens, single_sample_caption, single_sample_index = sample_in
                 target_tokens.append(single_target_tokens)
                 sample_caption.append(single_sample_caption)
                 sample_index.append(single_sample_index)
