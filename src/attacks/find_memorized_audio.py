@@ -1,6 +1,7 @@
 from src.attacks import FeatureExtractor
 from src.models.audiocraft import AudiocraftModelWrapper
 from src.evaluation.audio_embedding import AudioEmbeddingModel
+from src.local_datasets.audio_dataset import AudioDataset
 from torch import Tensor as T
 import torch
 
@@ -56,6 +57,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         return pred, target, sample_indices
 
     def run(self, *args, **kwargs) -> None:
+        dataset = AudioDataset(self.dataset_cfg)
+
         csv_dir = Path("analysis/plots/memorization")
         csv_dir.mkdir(parents=True, exist_ok=True)
 
@@ -74,6 +77,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         out = []
 
         for pred, target, sample_index in tqdm(zip(preds, targets, sample_indices), total=len(sample_indices)):
+            sample_index = dataset.get_filename_index(sample_index)
+
             N, K, T = pred.shape
             assert target.shape == (K, T)
 

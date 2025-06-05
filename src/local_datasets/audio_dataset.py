@@ -72,6 +72,11 @@ class AudioDataset(Dataset):
 
         return self._read_audio_as_mono(filename), caption
 
+    def get_filename_index(self, idx):
+        filename = self.filenames[idx]
+        filename_idx = _get_sample_index(filename)
+        return filename_idx
+
     def _read_audio_as_mono(self, filename: str) -> T:
         try:
             audio, sample_rate = audio_read(filename)
