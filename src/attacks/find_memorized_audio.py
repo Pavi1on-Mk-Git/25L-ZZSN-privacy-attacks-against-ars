@@ -119,7 +119,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
                 *[f"cosine_{i}" for i in TOP_TOKENS],
             ],
         )
-        df.sort_values(by=f"cosine_{TOP_TOKENS[-1]}", ascending=False)
+        df.sort_values(by=f"cosine_{TOP_TOKENS[-1]}", ascending=False, inplace=True)
         df.to_csv(
             csv_dir / f"{self.model_cfg.name}_memorized_{self.model_cfg.name}.csv",
             index=False,
