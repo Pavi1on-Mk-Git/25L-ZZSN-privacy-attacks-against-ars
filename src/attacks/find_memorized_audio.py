@@ -71,7 +71,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
         csv_dir.mkdir(parents=True, exist_ok=True)
 
         samples_dir = Path(f"generated_samples_{self.dataset_cfg.split}")
-        shutil.rmtree(samples_dir)
+        shutil.rmtree(samples_dir, ignore_errors=True)
         samples_dir.mkdir(parents=True)
 
         mem_info_features, captions = self.get_mem_info_data(self.dataset_cfg.split)
