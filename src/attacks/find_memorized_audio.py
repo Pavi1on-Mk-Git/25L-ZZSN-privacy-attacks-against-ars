@@ -25,6 +25,17 @@ class ExtractMemorizedAudio(FeatureExtractor):
         "audiogen_medium": [0, 1, 5, 14, 30],
     }
 
+    def get_mem_info_data(self, split: str) -> tuple[np.ndarray, list[str]]:
+        filename_base = f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_{split}"
+        features_filename = f"{filename_base}.npz"
+        captions_filename = f"{filename_base}_conditions.json"
+
+        features = np.load(features_filename, allow_pickle=True)["data"]
+        with open(captions_filename, "r") as fh:
+            captions = json.load(fh)
+
+        return features, captions
+
     @staticmethod
     def distance(target: Tensor, pred: Tensor):
         return (target == pred).sum().cpu()
@@ -63,10 +74,8 @@ class ExtractMemorizedAudio(FeatureExtractor):
         shutil.rmtree(samples_dir)
         samples_dir.mkdir(parents=True)
 
-        with open(
-            f"out/features/{self.model_cfg.name}_mem_info_10k_audiocaps_{self.dataset_cfg.split}_conditions.json"
-        ) as fh:
-            captions = json.load(fh)
+        mem_info_features, captions = self.get_mem_info_data(self.dataset_cfg.split)
+        scores = self.model.get_memorization_scores(mem_info_features, 1)
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
@@ -110,6 +119,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
             out.append(
                 [
                     sample_index,
+                    scores[sample_index],
                     captions[sample_index],
                     *[self.distance(target, single_pred) for single_pred in pred],
                     *cosines.tolist(),
