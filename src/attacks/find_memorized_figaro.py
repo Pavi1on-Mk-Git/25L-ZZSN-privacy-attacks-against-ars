@@ -151,6 +151,6 @@ class ExtractMemorizedFigaro(FeatureExtractor):
             ],
         )
         df.to_csv(
-            f"analysis/plots/memorization/{self.model_cfg.name}_memorized.csv",
+            f"analysis/plots/memorization/{self.model_cfg.name}_memorized_{self.dataset_cfg.split}.csv",
             index=False,
         )

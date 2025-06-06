@@ -14,13 +14,20 @@ class GenerateCandidatesFigaro(FeatureExtractor):
         "figaro": [1, 5, 14, 30],
     }
 
-    def get_data(self, split: str) -> tuple[np.ndarray, list[str]]:
-        assert split == "train"
-        features_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train.npz"
-        tokens_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_tokens.npy"
-        captions_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_latents.npy"
-        bar_ids_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_bar_ids.npy"
-        position_ids_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_train_position_ids.npy"
+    def get_data(self) -> tuple[np.ndarray, list[str]]:
+        features_filename = f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_{self.dataset_cfg.split}.npz"
+        tokens_filename = (
+            f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_{self.dataset_cfg.split}_tokens.npy"
+        )
+        captions_filename = (
+            f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_{self.dataset_cfg.split}_latents.npy"
+        )
+        bar_ids_filename = (
+            f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_{self.dataset_cfg.split}_bar_ids.npy"
+        )
+        position_ids_filename = (
+            f"out/features/{self.model_cfg.name}_mem_info_10k_lakhmidi_{self.dataset_cfg.split}_position_ids.npy"
+        )
 
         features = np.load(features_filename, allow_pickle=True)["data"]
         tokens = np.load(tokens_filename)
@@ -35,7 +42,7 @@ class GenerateCandidatesFigaro(FeatureExtractor):
         self.model: FigaroWrapper
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
-        members_features, tokens, latents, bar_ids, position_ids = self.get_data(self.dataset_cfg.split)
+        members_features, tokens, latents, bar_ids, position_ids = self.get_data()
         members_features = torch.from_numpy(members_features)  # B, F, T
         tokens = torch.from_numpy(tokens)
         bar_ids = torch.from_numpy(bar_ids)
@@ -70,10 +77,17 @@ class GenerateCandidatesFigaro(FeatureExtractor):
                 ).cpu()
 
                 pred.append(pred_tokens)
+                self.model.tokens_to_img(pred_tokens)[0].write(
+                    f"pred_{sample_index.item()}_{top_tokens}_{self.dataset_cfg.split}.mid"
+                )
 
             sample_indexes.append(sample_index.item())
             pred = torch.stack(pred, dim=1)
             out.append(torch.cat([pred, target_tokens.unsqueeze(1).cpu()], dim=1))
+
+            self.model.tokens_to_img(target_tokens)[0].write(
+                f"target_{sample_index.item()}_{self.dataset_cfg.split}.mid"
+            )
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
