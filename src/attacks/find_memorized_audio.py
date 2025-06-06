@@ -121,7 +121,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
                     sample_index,
                     scores[sample_index],
                     captions[sample_index],
-                    *[self.distance(target, single_pred) for single_pred in pred],
+                    *[self.distance(target, single_pred).item() for single_pred in pred],
                     *cosines.tolist(),
                 ]
             )
