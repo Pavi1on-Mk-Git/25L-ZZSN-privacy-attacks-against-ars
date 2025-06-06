@@ -137,7 +137,17 @@ class AudiocraftModelWrapper(GeneralVARWrapper):
         raise NotImplementedError
 
     def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
-        return members_features[:, ft_idx, :, -100:].mean(dim=1).mean(dim=1)
+        result = []
+        for sample in members_features:
+            is_top = sample[ft_idx]
+            assert len(is_top.shape) == 2
+
+            first_pad_index = is_top.isnan().any(dim=0).to(torch.int8).argmax()
+            if first_pad_index > 0:
+                is_top = is_top[:, :first_pad_index]
+
+            result.append(is_top.mean())
+        return torch.stack(result)
 
     @torch.no_grad()
     def get_loss_per_token(self, audios: T, conditioning: T, *args, **kwargs) -> T:
