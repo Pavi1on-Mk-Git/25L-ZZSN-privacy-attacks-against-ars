@@ -70,12 +70,12 @@ class ExtractMemorizedAudio(FeatureExtractor):
         csv_dir = Path("analysis/plots/memorization")
         csv_dir.mkdir(parents=True, exist_ok=True)
 
-        samples_dir = Path("generated_samples")
+        samples_dir = Path(f"generated_samples_{self.dataset_cfg.split}")
         shutil.rmtree(samples_dir)
         samples_dir.mkdir(parents=True)
 
         mem_info_features, captions = self.get_mem_info_data(self.dataset_cfg.split)
-        scores = self.model.get_memorization_scores(mem_info_features, 1)
+        scores = self.model.get_memorization_scores(torch.tensor(mem_info_features), 1).numpy()
 
         TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
@@ -130,6 +130,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
             out,
             columns=[
                 "sample_idx",
+                "score",
                 "caption",
                 *[f"token_eq_{i}" for i in TOP_TOKENS],
                 *[f"cosine_{i}" for i in TOP_TOKENS],
