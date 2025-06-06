@@ -27,3 +27,6 @@ samples/
 test.ipynb
 generated_samples*/
 memorization/
+*.mid
+*.png
+*.txt

@@ -100,5 +100,7 @@ class GenerateCandidatesFigaro(FeatureExtractor):
             + f"memorized_{self.dataset_cfg.split}_indexes.json"
         )
 
+        scores_sorted = torch.topk(scores, len(scores)).values.tolist()[: self.attack_cfg.n_samples]
+
         with open(indices_filename, "w") as fh:
-            json.dump(sample_indexes, fh)
+            json.dump({"indexes": sample_indexes, "scores": scores_sorted}, fh)

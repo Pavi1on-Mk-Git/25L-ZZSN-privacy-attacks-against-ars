@@ -87,7 +87,7 @@ class MemInfoExtractor(FeatureExtractor):
 
         token_probs = self.get_token_probs(tokens[:, : self.model.generator.context_size], probs)
         ranks = self.get_token_ranks(tokens[:, : self.model.generator.context_size], probs)
-        is_top = ranks == 0
+        is_top = ranks == 1
         max_probs = probs.max(dim=-1).values.unsqueeze(1)
         tokens_pred = logits.argmax(dim=-1).unsqueeze(1)
         features = torch.cat(

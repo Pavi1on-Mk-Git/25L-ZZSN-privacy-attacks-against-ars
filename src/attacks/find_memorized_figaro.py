@@ -38,11 +38,14 @@ class ExtractMemorizedFigaro(FeatureExtractor):
             + f"memorized_{self.dataset_cfg.split}_indexes.json",
             "r",
         ) as fh:
-            indices = json.load(fh)
+            indices_and_scores = json.load(fh)
+        indices = indices_and_scores["indexes"]
+        scores = indices_and_scores["scores"]
 
         indices = torch.tensor(indices)
+        scores = torch.tensor(scores)
 
-        dataset = TensorDataset(indices, data)
+        dataset = TensorDataset(indices, scores, data)
         loader = DataLoader(
             dataset,
             num_workers=self.config.dataloader_num_workers,
@@ -110,7 +113,7 @@ class ExtractMemorizedFigaro(FeatureExtractor):
 
         device = self.model_cfg.device
         out = []
-        for sample_idx, batch in tqdm(loader, total=len(loader)):
+        for sample_idx, sample_score, batch in tqdm(loader, total=len(loader)):
             B = batch.shape[0]
             batch = batch.to(device).long()
             target = batch[:, 4, :]
@@ -133,6 +136,7 @@ class ExtractMemorizedFigaro(FeatureExtractor):
             out.append(
                 [
                     sample_idx,
+                    sample_score,
                     *[self.distance[self.model_cfg.name](target, pred) for pred in preds],
                     *levenshteins.tolist(),
                 ]
@@ -146,6 +150,7 @@ class ExtractMemorizedFigaro(FeatureExtractor):
             out,
             columns=[
                 "sample_idx",
+                "sample_score",
                 *[f"token_eq_{i}" for i in TOP_TOKENS],
                 *[f"levenshtein_{i}" for i in TOP_TOKENS],
             ],
