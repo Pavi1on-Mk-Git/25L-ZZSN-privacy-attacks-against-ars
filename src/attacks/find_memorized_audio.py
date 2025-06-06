@@ -38,7 +38,7 @@ class ExtractMemorizedAudio(FeatureExtractor):
 
     @staticmethod
     def distance(target: Tensor, pred: Tensor):
-        return (target == pred).sum().cpu()
+        return (target == pred).sum().cpu() / target.shape[1]
 
     def get_cosine(self, features_real: T, features_generated: T) -> T:
         cosine_similarity = (
